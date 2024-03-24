@@ -1,0 +1,44 @@
+@startuml name topup fail
+title topup unsuccess flow
+box "Payment Provider" #LightBlue
+participant "Transaction processor" as proc
+participant "Transaction" as tr
+participant "Card" as card
+participant "Account" as acc
+participant "Notification" as not
+end box
+database "Postgres" as db
+participant "Merchant" as merchant
+
+proc -> tr : get transactions for processing
+activate proc
+activate tr
+tr -> db : query transactions
+tr <- db : transactions for processing
+tr -> proc : transactions for processing
+deactivate tr
+proc -> card: check card balance
+activate card
+card -> db: get balance
+db -> card: result
+card -> proc: insufficient balance
+deactivate card
+    proc -> tr: update transaction
+    activate tr
+    tr->tr: create transaction error
+    tr -> db: update transaction and error
+    tr <- db: success
+    tr -> proc: success
+    deactivate tr
+proc -> not: send notification
+deactivate proc
+activate not
+deactivate tr
+activate not
+not -> merchant : send notification
+not <- merchant : response
+not -> db : save notification result
+not <- db : success
+deactivate not
+
+@enduml

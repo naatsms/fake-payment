@@ -1,0 +1,57 @@
+@startuml name "topup"
+title topup success flow
+box "Payment Provider" #LightBlue
+participant "Transaction processor" as proc
+participant "Transaction" as tr
+participant "Card" as card
+participant "Account" as acc
+participant "Notification" as not
+end box
+database "Postgres" as db
+participant "Merchant" as merchant
+
+proc -> tr : get transactions for processing
+activate proc
+activate tr
+tr -> db : query transactions
+tr <- db : transactions for processing
+tr -> proc : transactions for processing
+deactivate tr
+proc -> acc: check account balance
+activate acc
+acc -> db: get balance
+db -> acc: result
+acc -> proc: transaction allowed
+deactivate acc
+group transaction
+    proc -> tr: update transaction
+    activate tr
+    tr -> db: update transaction
+    tr <- db: success
+    tr -> proc: success
+    deactivate tr
+    proc -> card: update card balance
+    activate card
+    card -> card: calculate card balance
+    card -> db: update card balance
+    db -> card: success
+    card -> proc: success
+    deactivate card
+    proc -> acc: update account balance
+    activate acc
+    acc -> acc: calculate balance
+    acc -> db: update account balance
+    db -> acc: success
+    acc -> proc: success
+    deactivate acc
+end
+proc -> not: send notification
+deactivate proc
+activate not
+not -> merchant : send notification
+not <- merchant : response
+not -> db : save notification result
+not <- db : success
+deactivate not
+
+@enduml

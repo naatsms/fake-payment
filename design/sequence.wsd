@@ -1,0 +1,20 @@
+@startuml
+participant "Merchant" as merchant
+box "Payment Provider" #LightBlue
+participant "Transaction API" as api
+participant "Transaction" as tr
+end box
+database "Postgres" as db
+
+merchant -> api : request 
+activate api
+api -> tr : create transaction
+activate tr
+tr -> db : store transaction
+tr <- db : transaction saved
+api <- tr : transaction saved
+deactivate tr
+api -> merchant: 201 IN_PROGRESS
+deactivate api
+
+@enduml

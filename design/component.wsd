@@ -1,0 +1,59 @@
+@startuml
+top to bottom direction
+skinparam linetype ortho
+[merchant]
+component PaymentProvider {
+    portin " " as p1
+    component "Transaction API" as api {
+    [Security] as security
+    }
+    [TransactionProcessor] as trProc
+    together {
+    [UserService] as user
+    () "intUser"
+    }
+    together {
+    [TransactionService] as tr
+    () "intTransaction"
+    }
+    together {
+    [AccountService] as acc
+    () "intAccount"
+    }
+    together {
+    [CardService] as card
+    () "intCard"
+    }
+    together {
+    [NotificationService] as not
+    () "intNotification"
+    }
+    portout "WebClient" as p2
+}
+
+merchant ..> p1 : request
+security --> intUser
+api <-- p1
+intUser -- user
+intTransaction -- tr
+intCard -- card
+intAccount -- acc
+intNotification -- not
+api --> intTransaction
+user -> Postgres
+tr -> Postgres
+card -> Postgres
+acc -> Postgres
+not -> Postgres
+trProc --> intTransaction
+intNotification <-left- tr
+trProc -> intAccount
+trProc -> intCard
+not -- p2
+p2 ..> (HTTP) : use
+
+database "Postgres" {
+
+}
+
+@enduml
