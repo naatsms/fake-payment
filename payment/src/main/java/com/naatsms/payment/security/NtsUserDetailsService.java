@@ -28,6 +28,6 @@ public class NtsUserDetailsService implements ReactiveUserDetailsService
 
     private UserDetails toUserDetails(final Merchant merchant)
     {
-        return new User(merchant.getName(), merchant.getSecretKey(), AuthorityUtils.createAuthorityList("USER"));
+        return new User(merchant.name(), merchant.secret(), AuthorityUtils.createAuthorityList("USER"));
     }
 }
