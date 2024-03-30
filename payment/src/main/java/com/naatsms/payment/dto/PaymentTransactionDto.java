@@ -12,7 +12,7 @@ public record PaymentTransactionDto(
         @JsonProperty BigDecimal amount,
         @JsonProperty("created_at") LocalDateTime createdAt,
         @JsonProperty("updated_at") LocalDateTime updatedAt,
-        @JsonProperty("currency") Long currencyIso,
+        @JsonProperty("currency") String currencyIso,
         @JsonProperty("language") String languageIso,
         @JsonProperty("notification_url") String notificationUrl,
         @JsonProperty("card_data") @Transient CardDto card,
