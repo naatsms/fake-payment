@@ -8,5 +8,5 @@ import java.util.Date;
 public record CardDto(
         @JsonProperty("card_number") String cardNumber,
         @JsonProperty("exp_date") @JsonFormat(pattern = "MM/yy") Date expDate,
-        String cvv)
+        String ccv)
 {}
