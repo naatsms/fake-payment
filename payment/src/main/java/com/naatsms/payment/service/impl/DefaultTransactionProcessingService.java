@@ -12,12 +12,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.retry.Retry;
 
-import java.time.Duration;
 import java.util.function.Predicate;
 
 @Service
@@ -42,7 +39,7 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     }
 
     @Override
-    @Scheduled(cron = "5/10 0 0 ? * * *")
+    @Scheduled(cron = "5/10 * * ? * *")
     public void processTopUpTransactions() {
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.TRANSACTION)
                 .publishOn(Schedulers.boundedElastic())
@@ -55,7 +52,7 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     }
 
     @Override
-    @Scheduled(cron = "0/10 0 0 ? * * *")
+    @Scheduled(cron = "0/10 * * ? * *")
     public void processPayoutTransactions() {
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.PAYOUT)
                 .publishOn(Schedulers.boundedElastic())
