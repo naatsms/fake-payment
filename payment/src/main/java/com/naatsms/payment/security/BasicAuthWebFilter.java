@@ -15,6 +15,8 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import static com.naatsms.payment.constants.SessionKeys.MERCHANT_ID;
+
 @Component
 @Qualifier("basicAuthWebFilter")
 public class BasicAuthWebFilter implements WebFilter
@@ -37,7 +39,7 @@ public class BasicAuthWebFilter implements WebFilter
         return merchantRepository.findByName(credentials[0])
                 .filter(merchant -> passwordEncoder.matches(credentials[1], merchant.secret()))
                 .switchIfEmpty(Mono.error(new BadCredentialsException("Bad credentials")))
-                .doOnNext(merchant -> exchange.getAttributes().put("merchant", merchant.id()))
+                .doOnNext(merchant -> exchange.getAttributes().put(MERCHANT_ID, merchant.id()))
                 .flatMap(f -> chain.filter(exchange));
     }
 

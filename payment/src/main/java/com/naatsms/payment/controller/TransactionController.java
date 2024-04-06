@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import static com.naatsms.payment.constants.SessionKeys.MERCHANT_ID;
+
 @RestController
 public class TransactionController
 {
@@ -28,7 +30,7 @@ public class TransactionController
     @PostMapping("/transaction")
     public Mono<TransactionResponseDto> createTransaction(@RequestBody PaymentTransactionDto transaction, ServerWebExchange exchange) {
         LOG.info("{} is being created...", transaction);
-        return transactionService.createTransaction(transaction, exchange.getAttribute("merchantId"))
+        return transactionService.createTransaction(transaction, exchange.getAttribute(MERCHANT_ID))
                 .map(this::toDto);
     }
 
