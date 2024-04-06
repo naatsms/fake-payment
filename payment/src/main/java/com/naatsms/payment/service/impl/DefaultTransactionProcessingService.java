@@ -3,6 +3,7 @@ package com.naatsms.payment.service.impl;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.enums.TransactionStatus;
 import com.naatsms.payment.enums.TransactionType;
+import com.naatsms.payment.exception.BusinessException;
 import com.naatsms.payment.repository.TransactionRepository;
 import com.naatsms.payment.service.TransactionProcessingService;
 import com.naatsms.payment.strategy.TransactionProcessingStrategy;
@@ -66,13 +67,20 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
 
     private Mono<PaymentTransaction> handleTransactionError(final Throwable ex, final PaymentTransaction pt)
     {
-        if (lockFailurePredicate.test(ex)) {
+        if (lockFailurePredicate.test(ex))
+        {
             LOG.error("Failed to acquire a lock during processing, next attempt in 10 seconds");
             return Mono.empty();
         }
-            LOG.error("Error during processing of transaction {}", pt.uuid());
-            LOG.error("Error: ", ex);
-            return transactionRepository.updateStatusByTransactionId(pt.uuid(), TransactionStatus.ERROR, ex.getMessage()).dematerialize();
+        LOG.error("Error during processing of transaction {}", pt.uuid());
+        if (ex instanceof BusinessException) {
+            LOG.error("Processing error: {}", ex.getMessage());
+        }
+        else {
+            LOG.error("Application error: ", ex);
+        }
+        return transactionRepository.updateStatusByTransactionId(pt.uuid(), TransactionStatus.ERROR, ex.getMessage())
+              .thenReturn(pt);
     }
 
     private void sendNotification(final PaymentTransaction transaction)

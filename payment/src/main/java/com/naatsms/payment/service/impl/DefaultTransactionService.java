@@ -14,9 +14,12 @@ import com.naatsms.payment.service.TransactionService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-
+/**
+ * TODO records to classes for entities.
+ * TODO support nested entities with custom repositories
+ * TODO Balance validation before save
+ * TODO use contextView to reduce DB calls
+ */
 
 @Service
 public class DefaultTransactionService implements TransactionService
@@ -43,7 +46,7 @@ public class DefaultTransactionService implements TransactionService
                 .flatMap(card -> getCustomerMono(transactionData, card))
                 .map(Customer::id);
         Mono<Long> accountBalanceId = accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transactionData.currencyIso())
-                .switchIfEmpty(Mono.error(AccountNotFoundException::new))
+                .switchIfEmpty(Mono.error(() -> new AccountNotFoundException("Account not found for merchant: " + merchantId + "and currency: " + transactionData.currencyIso())))
                 .map(AccountBalance::id);
         return Mono.zip(customerId, accountBalanceId)
                 .map(tuple -> PaymentTransaction.fromDto(transactionData, tuple.getT1(), tuple.getT2()))

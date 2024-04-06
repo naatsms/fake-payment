@@ -50,7 +50,7 @@ public class PayoutTransactionProcessingStrategy implements TransactionProcessin
     private Mono<AccountBalance> validateSufficientBalance(final BigDecimal amount, final AccountBalance accountBalance)
     {
         if (accountBalance.amount().compareTo(amount) < 0) {
-            throw new InsufficientAccountBalanceException();
+            throw new InsufficientAccountBalanceException("Insufficient balance on account " + accountBalance.merchantId() + " for currency " + accountBalance.currencyIso());
         }
         return Mono.just(accountBalance);
     }

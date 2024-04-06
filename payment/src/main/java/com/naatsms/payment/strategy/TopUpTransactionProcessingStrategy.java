@@ -43,14 +43,13 @@ public class TopUpTransactionProcessingStrategy implements TransactionProcessing
                 .then(accountRepository.selectForUpdateById(paymentTransaction.accountBalanceId()))
                 .flatMap(accountBalance -> accountRepository.updateAmountByAccountId(accountBalance.id(), accountBalance.amount().add(amount)))
                 .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.uuid(), TransactionStatus.SUCCESS, Messages.OK))
-                .log()
                 .map(mono -> paymentTransaction);
     }
 
     private Mono<Card> validateSufficientBalance(final BigDecimal amount, final Card card)
     {
         if (card.amount().compareTo(amount) < 0) {
-            throw new InsufficientCardBalanceException();
+            throw new InsufficientCardBalanceException("Insufficient balance for the card " + card.cardNumber());
         }
         return Mono.just(card);
     }
