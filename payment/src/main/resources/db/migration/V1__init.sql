@@ -55,3 +55,15 @@ CREATE TABLE PaymentTransaction (
                                     message VARCHAR(255),
                                     notification_url VARCHAR(1000)
 );
+
+CREATE OR REPLACE FUNCTION update_modified_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_modified_trigger
+    BEFORE UPDATE ON PaymentTransaction
+    FOR EACH ROW EXECUTE FUNCTION update_modified_timestamp();
