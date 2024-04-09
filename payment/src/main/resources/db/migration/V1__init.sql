@@ -56,6 +56,15 @@ CREATE TABLE PaymentTransaction (
                                     notification_url VARCHAR(1000)
 );
 
+CREATE TABLE NotificationLog (
+                          id SERIAL PRIMARY KEY,
+                          transaction_uuid UUID REFERENCES PaymentTransaction(uuid) UNIQUE,
+                          request_payload VARCHAR(4000),
+                          response_payload VARCHAR(4000),
+                          response_status INT,
+                          url VARCHAR (1000)
+);
+
 CREATE OR REPLACE FUNCTION update_modified_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
