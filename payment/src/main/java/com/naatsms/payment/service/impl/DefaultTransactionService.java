@@ -5,6 +5,7 @@ import com.naatsms.payment.entity.AccountBalance;
 import com.naatsms.payment.entity.Card;
 import com.naatsms.payment.entity.Customer;
 import com.naatsms.payment.entity.PaymentTransaction;
+import com.naatsms.payment.enums.TransactionType;
 import com.naatsms.payment.exception.AccountNotFoundException;
 import com.naatsms.payment.repository.AccountRepository;
 import com.naatsms.payment.repository.CardRepository;
@@ -36,7 +37,7 @@ public class DefaultTransactionService implements TransactionService
     }
 
     @Override
-    public Mono<PaymentTransaction> createTransaction(final PaymentTransactionDto transactionData, final Long merchantId)
+    public Mono<PaymentTransaction> createTransaction(final PaymentTransactionDto transactionData, final TransactionType type, final Long merchantId)
     {
         Mono<Long> customerId = cardRepository.findByCardNumber(transactionData.card().cardNumber())
                 .switchIfEmpty(cardRepository.save(Card.fromDto(transactionData.card())))

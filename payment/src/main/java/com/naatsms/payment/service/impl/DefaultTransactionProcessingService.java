@@ -5,6 +5,7 @@ import com.naatsms.payment.enums.TransactionStatus;
 import com.naatsms.payment.enums.TransactionType;
 import com.naatsms.payment.exception.BusinessException;
 import com.naatsms.payment.repository.TransactionRepository;
+import com.naatsms.payment.service.NotificationService;
 import com.naatsms.payment.service.TransactionProcessingService;
 import com.naatsms.payment.strategy.TransactionProcessingStrategy;
 import org.slf4j.Logger;
@@ -26,22 +27,26 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     private final TransactionProcessingStrategy topUpProcessingStrategy;
     private final TransactionProcessingStrategy payOutProcessingStrategy;
     private final TransactionRepository transactionRepository;
+    private final NotificationService notificationService;
 
     private static final Predicate<Throwable> lockFailurePredicate = PessimisticLockingFailureException.class::isInstance;
 
     public DefaultTransactionProcessingService(
             @Qualifier("topUpProcessingStrategy") final TransactionProcessingStrategy topUpProcessingStrategy,
             @Qualifier("payoutProcessingStrategy") final TransactionProcessingStrategy payOutProcessingStrategy,
-            final TransactionRepository transactionRepository)
+            final TransactionRepository transactionRepository,
+            final NotificationService notificationService)
     {
         this.topUpProcessingStrategy = topUpProcessingStrategy;
         this.payOutProcessingStrategy = payOutProcessingStrategy;
         this.transactionRepository = transactionRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
     @Scheduled(cron = "5/10 * * ? * *")
     public void processTopUpTransactions() {
+        LOG.info("Processing top up transactions, fetching transactions for processing...");
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.TRANSACTION)
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(pt -> LOG.info("Process top-up transaction {}...", pt.getUuid()))
@@ -55,6 +60,7 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     @Override
     @Scheduled(cron = "0/10 * * ? * *")
     public void processPayoutTransactions() {
+        LOG.info("Processing payout transactions, fetching transactions for processing...");
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.PAYOUT)
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(pt -> LOG.info("Process payout transaction {}...", pt.getUuid()))
@@ -85,7 +91,9 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
 
     private void sendNotification(final PaymentTransaction transaction)
     {
-        Mono.just("sending notification for transaction " + transaction.uuid())
+        Mono.just(transaction.getUuid())
+                .doOnSubscribe(uuid -> LOG.info("sending notification for transaction {}", uuid))
+                .flatMap(notificationService::sendNotification)
                 .subscribe();
     }
 
