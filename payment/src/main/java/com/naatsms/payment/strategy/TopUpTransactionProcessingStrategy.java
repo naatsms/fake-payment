@@ -35,21 +35,21 @@ public class TopUpTransactionProcessingStrategy implements TransactionProcessing
 
     public Mono<PaymentTransaction> processTransaction(final PaymentTransaction paymentTransaction)
     {
-        final BigDecimal amount = paymentTransaction.amount();
-        return cardRepository.selectForUpdateByCustomerId(paymentTransaction.customerId())
+        final BigDecimal amount = paymentTransaction.getAmount();
+        return cardRepository.selectForUpdateByCustomerId(paymentTransaction.getCustomerId())
                 .as(transactionalOperator::transactional)
                 .flatMap(card -> validateSufficientBalance(amount, card))
-                .flatMap(card -> cardRepository.updateAmountByCardId(card.id(), card.amount().subtract(amount)))
-                .then(accountRepository.selectForUpdateById(paymentTransaction.accountBalanceId()))
+                .flatMap(card -> cardRepository.updateAmountByCardId(card.getId(), card.getAmount().subtract(amount)))
+                .then(accountRepository.selectForUpdateById(paymentTransaction.getAccountBalanceId()))
                 .flatMap(accountBalance -> accountRepository.updateAmountByAccountId(accountBalance.id(), accountBalance.amount().add(amount)))
-                .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.uuid(), TransactionStatus.SUCCESS, Messages.OK))
+                .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.getUuid(), TransactionStatus.SUCCESS, Messages.OK))
                 .map(mono -> paymentTransaction);
     }
 
     private Mono<Card> validateSufficientBalance(final BigDecimal amount, final Card card)
     {
-        if (card.amount().compareTo(amount) < 0) {
-            throw new InsufficientCardBalanceException("Insufficient balance for the card " + card.cardNumber());
+        if (card.getAmount().compareTo(amount) < 0) {
+            throw new InsufficientCardBalanceException("Insufficient balance for the card " + card.getCardNumber());
         }
         return Mono.just(card);
     }

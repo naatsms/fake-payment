@@ -44,10 +44,10 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     public void processTopUpTransactions() {
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.TRANSACTION)
                 .publishOn(Schedulers.boundedElastic())
-                .doOnNext(pt -> LOG.info("Process top-up transaction {}...", pt.uuid()))
+                .doOnNext(pt -> LOG.info("Process top-up transaction {}...", pt.getUuid()))
                 .flatMap(pt -> topUpProcessingStrategy.processTransaction(pt)
                         .onErrorResume(ex -> handleTransactionError(ex, pt)))
-                .doOnNext(pt -> LOG.info("Top-up transaction {} has been processed successfully", pt.uuid()))
+                .doOnNext(pt -> LOG.info("Top-up transaction {} has been processed successfully", pt.getUuid()))
                 .doOnNext(this::sendNotification)
                 .subscribe();
     }
@@ -57,10 +57,10 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     public void processPayoutTransactions() {
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.PAYOUT)
                 .publishOn(Schedulers.boundedElastic())
-                .doOnNext(pt -> LOG.info("Process payout transaction {}...", pt.uuid()))
+                .doOnNext(pt -> LOG.info("Process payout transaction {}...", pt.getUuid()))
                 .flatMap(pt -> payOutProcessingStrategy.processTransaction(pt)
                         .onErrorResume(ex -> handleTransactionError(ex, pt)))
-                .doOnNext(pt -> LOG.info("Payout transaction {} has been processed successfully", pt.uuid()))
+                .doOnNext(pt -> LOG.info("Payout transaction {} has been processed successfully", pt.getUuid()))
                 .doOnNext(this::sendNotification)
                 .subscribe();
     }
@@ -72,14 +72,14 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
             LOG.error("Failed to acquire a lock during processing, next attempt in 10 seconds");
             return Mono.empty();
         }
-        LOG.error("Error during processing of transaction {}", pt.uuid());
+        LOG.error("Error during processing of transaction {}", pt.getUuid());
         if (ex instanceof BusinessException) {
             LOG.error("Processing error: {}", ex.getMessage());
         }
         else {
             LOG.error("Application error: ", ex);
         }
-        return transactionRepository.updateStatusByTransactionId(pt.uuid(), TransactionStatus.ERROR, ex.getMessage())
+        return transactionRepository.updateStatusByTransactionId(pt.getUuid(), TransactionStatus.ERROR, ex.getMessage())
               .thenReturn(pt);
     }
 

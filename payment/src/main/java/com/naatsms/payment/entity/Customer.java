@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.util.Map;
+
 @Table("customer")
 public record Customer(
         @Id Long id,
@@ -22,4 +24,13 @@ public record Customer(
                 dto.country());
     }
 
+    public static Customer fromRow(Map<String, Object> row) {
+        return new Customer(
+                null,
+                null,
+                (String) row.get("first_name"),
+                (String) row.get("last_name"),
+                (String) row.get("country")
+                );
+    }
 }

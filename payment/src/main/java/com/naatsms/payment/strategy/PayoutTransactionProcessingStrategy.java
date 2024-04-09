@@ -35,14 +35,14 @@ public class PayoutTransactionProcessingStrategy implements TransactionProcessin
 
     public Mono<PaymentTransaction> processTransaction(final PaymentTransaction paymentTransaction)
     {
-        BigDecimal amount = paymentTransaction.amount();
-        return cardRepository.selectForUpdateByCustomerId(paymentTransaction.customerId())
-                .flatMap(card -> cardRepository.updateAmountByCardId(card.id(), card.amount().add(amount)))
-                .then(accountRepository.selectForUpdateById(paymentTransaction.accountBalanceId()))
+        BigDecimal amount = paymentTransaction.getAmount();
+        return cardRepository.selectForUpdateByCustomerId(paymentTransaction.getCustomerId())
+                .flatMap(card -> cardRepository.updateAmountByCardId(card.getId(), card.getAmount().add(amount)))
+                .then(accountRepository.selectForUpdateById(paymentTransaction.getAccountBalanceId()))
                 .flatMap(accountBalance -> validateSufficientBalance(amount, accountBalance))
                 .flatMap(accountBalance -> accountRepository.updateAmountByAccountId(accountBalance.id(), accountBalance.amount().subtract(amount)))
-                .then(transactionRepository.selectForUpdateByUuid(paymentTransaction.uuid()))
-                .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.uuid(), TransactionStatus.SUCCESS, Messages.OK))
+                .then(transactionRepository.selectForUpdateByUuid(paymentTransaction.getUuid()))
+                .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.getUuid(), TransactionStatus.SUCCESS, Messages.OK))
                 .as(transactionalOperator::transactional)
                 .map(mono -> paymentTransaction);
     }

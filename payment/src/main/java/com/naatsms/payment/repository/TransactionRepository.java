@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Repository
-public interface TransactionRepository extends ReactiveCrudRepository<PaymentTransaction, UUID>
+public interface TransactionRepository extends ReactiveCrudRepository<PaymentTransaction, UUID>, FindTransactionEnriched<PaymentTransaction>
 {
 
     @Query("SELECT * FROM paymenttransaction where uuid = :uuid FOR UPDATE")

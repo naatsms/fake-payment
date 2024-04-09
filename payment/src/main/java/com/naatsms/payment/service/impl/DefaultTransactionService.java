@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 /**
- * TODO records to classes for entities.
- * TODO support nested entities with custom repositories
  * TODO Balance validation before save
- * TODO use contextView to reduce DB calls
  */
 
 @Service
@@ -49,15 +46,15 @@ public class DefaultTransactionService implements TransactionService
                 .switchIfEmpty(Mono.error(() -> new AccountNotFoundException("Account not found for merchant: " + merchantId + "and currency: " + transactionData.currencyIso())))
                 .map(AccountBalance::id);
         return Mono.zip(customerId, accountBalanceId)
-                .map(tuple -> PaymentTransaction.fromDto(transactionData, tuple.getT1(), tuple.getT2()))
+                .map(tuple -> PaymentTransaction.fromDto(transactionData, type, tuple.getT1(), tuple.getT2()))
                 .flatMap(transactionRepository::save);
     }
 
     private Mono<Customer> getCustomerMono(final PaymentTransactionDto transactionData, final Card card)
     {
         var customer = transactionData.customer();
-        return customerRepository.findByFirstNameAndLastNameAndCardId(customer.firstName(), customer.lastName(), card.id())
-                          .switchIfEmpty(customerRepository.save(Customer.fromDto(customer, card.id())));
+        return customerRepository.findByFirstNameAndLastNameAndCardId(customer.firstName(), customer.lastName(), card.getId())
+                          .switchIfEmpty(customerRepository.save(Customer.fromDto(customer, card.getId())));
     }
 
 }
