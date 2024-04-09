@@ -13,7 +13,11 @@ import com.naatsms.payment.repository.CustomerRepository;
 import com.naatsms.payment.repository.TransactionRepository;
 import com.naatsms.payment.service.TransactionService;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * TODO Balance validation before save
@@ -56,6 +60,18 @@ public class DefaultTransactionService implements TransactionService
         var customer = transactionData.customer();
         return customerRepository.findByFirstNameAndLastNameAndCardId(customer.firstName(), customer.lastName(), card.getId())
                           .switchIfEmpty(customerRepository.save(Customer.fromDto(customer, card.getId())));
+    }
+
+    @Override
+    public Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid, TransactionType type, Long merchantId) {
+        //TODO implement
+        return null;
+    }
+
+    @Override
+    public Flux<PaymentTransaction> getTransactionsForDateRange(LocalDateTime from, LocalDateTime to, TransactionType type, Long merchantId) {
+        //TODO implement
+        return null;
     }
 
 }
