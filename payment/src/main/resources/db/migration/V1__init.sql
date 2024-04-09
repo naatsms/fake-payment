@@ -49,10 +49,11 @@ CREATE TABLE PaymentTransaction (
                                     account_id INT REFERENCES AccountBalance(id),
                                     customer_id INT REFERENCES Customer(id),
                                     language_iso VARCHAR(255) REFERENCES Language(name),
+                                    currency_iso VARCHAR(255) REFERENCES Currency(name),
                                     amount DECIMAL(12,2),
                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                    message VARCHAR(255),
+                                    message VARCHAR(4000),
                                     notification_url VARCHAR(1000)
 );
 
