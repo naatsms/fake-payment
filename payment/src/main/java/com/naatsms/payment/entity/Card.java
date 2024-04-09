@@ -1,6 +1,10 @@
 package com.naatsms.payment.entity;
 
 import com.naatsms.payment.dto.CardDto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -8,22 +12,31 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Map;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Table("Card")
-public record Card(
-        @Id Long id,
-        @Column("card_number") String cardNumber,
-        @Column("exp_date") LocalDate expDate,
-        String ccv,
-        BigDecimal amount)
-{
+public class Card {
+        @Id private Long id;
+        @Column("card_number") private String cardNumber;
+        @Column("exp_date") private LocalDate expDate;
+        @Column private String ccv;
+        @Column("card_amount") private BigDecimal amount;
 
     public static Card fromDto(CardDto cardDto) {
-        return new Card(null,
-                cardDto.cardNumber(),
+        return new Card(null, cardDto.cardNumber(),
                 LocalDate.ofInstant(cardDto.expDate().toInstant(), ZoneId.systemDefault()),
-                cardDto.ccv(),
-                null);
+                cardDto.ccv(), null);
+    }
+
+    public static Card fromRow(Map<String, Object> row) {
+        return Card.builder()
+                .id(((Integer)(row.get("card_id"))).longValue())
+                .cardNumber((String) row.get("card_number"))
+                .amount((BigDecimal) row.get("card_amount")).build();
     }
 
 }

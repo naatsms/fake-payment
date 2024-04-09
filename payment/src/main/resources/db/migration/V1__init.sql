@@ -20,7 +20,7 @@ CREATE TABLE Card (
                       card_number VARCHAR UNIQUE,
                       ccv VARCHAR(3),
                       exp_date DATE,
-                      amount DECIMAL(12,2) DEFAULT 1000,
+                      card_amount DECIMAL(12,2),
                       CONSTRAINT ccv_length CHECK (LENGTH(ccv) = 3)
 );
 
