@@ -27,10 +27,10 @@ public record Customer(
     public static Customer fromRow(Map<String, Object> row) {
         return new Customer(
                 null,
-                null,
-                (String) row.get("first_name"),
-                (String) row.get("last_name"),
-                (String) row.get("country")
+                (Long) row.get("cs_card_id"),
+                (String) row.get("cs_name"),
+                (String) row.get("cs_last_name"),
+                (String) row.get("cs_country")
                 );
     }
 }

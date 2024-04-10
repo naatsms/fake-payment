@@ -34,9 +34,9 @@ public class Card {
 
     public static Card fromRow(Map<String, Object> row) {
         return Card.builder()
-                .id(((Integer)(row.get("card_id"))).longValue())
-                .cardNumber((String) row.get("card_number"))
-                .amount((BigDecimal) row.get("card_amount")).build();
+                .id(((Integer)(row.get("cd_id"))).longValue())
+                .cardNumber((String) row.get("cd_number"))
+                .amount((BigDecimal) row.get("cd_amount")).build();
     }
 
 }

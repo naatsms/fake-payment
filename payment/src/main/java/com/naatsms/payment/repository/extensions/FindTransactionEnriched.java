@@ -1,4 +1,4 @@
-package com.naatsms.payment.repository;
+package com.naatsms.payment.repository.extensions;
 
 import reactor.core.publisher.Mono;
 

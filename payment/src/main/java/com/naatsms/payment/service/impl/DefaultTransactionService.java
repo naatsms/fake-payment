@@ -7,6 +7,7 @@ import com.naatsms.payment.entity.Customer;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.enums.TransactionType;
 import com.naatsms.payment.exception.AccountNotFoundException;
+import com.naatsms.payment.exception.BusinessException;
 import com.naatsms.payment.repository.AccountRepository;
 import com.naatsms.payment.repository.CardRepository;
 import com.naatsms.payment.repository.CustomerRepository;
@@ -16,7 +17,10 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -64,12 +68,38 @@ public class DefaultTransactionService implements TransactionService
 
     @Override
     public Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid, TransactionType type, Long merchantId) {
-        //TODO implement
-        return null;
+        return transactionRepository.findByUuidEnriched(transactionUuid)
+                .flatMap(transaction -> verifyType(transaction, type))
+                .flatMap(transaction -> verifyAccount(transaction, merchantId));
+    }
+
+    private Mono<PaymentTransaction> verifyAccount(PaymentTransaction transaction, Long merchantId) {
+        return accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transaction.getCurrencyIso())
+                .filter(accountBalance -> accountBalance.id().equals(transaction.getAccountBalanceId()))
+                .map(account -> transaction)
+                .switchIfEmpty(Mono.error(new BusinessException("Transaction with uuid %d doesn't belong to merchant")));
+    }
+
+    private Mono<PaymentTransaction> verifyType(PaymentTransaction transaction, TransactionType type) {
+        if (!transaction.getType().equals(type)) {
+            throw new BusinessException("No matched transaction for uuid %s and type %s".formatted(transaction.getUuid(), type));
+        }
+        return Mono.just(transaction);
     }
 
     @Override
     public Flux<PaymentTransaction> getTransactionsForDateRange(LocalDateTime from, LocalDateTime to, TransactionType type, Long merchantId) {
+        if (from == null && to == null) {
+            from = LocalDate.now().atStartOfDay();
+            to = from.plusDays(1);
+        }
+        else if (from == null) {
+            from = LocalDateTime.MIN;
+        }
+        else if (to == null) {
+            to = LocalDateTime.MAX;
+        }
+
         //TODO implement
         return null;
     }
