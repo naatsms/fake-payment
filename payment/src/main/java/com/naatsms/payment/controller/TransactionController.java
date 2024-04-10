@@ -89,7 +89,7 @@ public class TransactionController
 
     private TransactionDetailsDto toDetailsDto(final PaymentTransaction paymentTransaction)
     {
-        return new TransactionDetailsDto();
+        return TransactionDetailsDto.fromTransactionEntity(paymentTransaction);
     }
 
     @ExceptionHandler

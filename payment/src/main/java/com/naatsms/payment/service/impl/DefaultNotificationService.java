@@ -2,7 +2,7 @@ package com.naatsms.payment.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.naatsms.payment.dto.NotificationDto;
+import com.naatsms.payment.dto.TransactionDetailsDto;
 import com.naatsms.payment.entity.NotificationLog;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.exception.BusinessException;
@@ -49,7 +49,7 @@ public class DefaultNotificationService implements NotificationService
         return WebClient.create(transaction.getNotificationUrl())
                 .post()
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(NotificationDto.fromTransactionEntity(transaction))
+                .bodyValue(TransactionDetailsDto.fromTransactionEntity(transaction))
                 .retrieve()
                 .toEntity(String.class)
                 .retryWhen(Retry.backoff(5, Duration.ofSeconds(10))
@@ -64,7 +64,7 @@ public class DefaultNotificationService implements NotificationService
         return Mono.defer(() -> {
             try
             {
-                var request = objectMapper.writeValueAsString(NotificationDto.fromTransactionEntity(transaction));
+                var request = objectMapper.writeValueAsString(TransactionDetailsDto.fromTransactionEntity(transaction));
                 var response = entity.getBody();
                 return Mono.just(new NotificationLog(null, transaction.getUuid(), request, response, entity.getStatusCode().value(), transaction.getNotificationUrl()));
             }
