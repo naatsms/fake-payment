@@ -43,14 +43,19 @@ public class TransactionController
     public Mono<TransactionResponseDto> createTopUp(@RequestBody PaymentTransactionDto transaction, ServerWebExchange exchange) {
         LOG.info("{} is being created...", transaction);
         return transactionService.createTransaction(transaction, TransactionType.TRANSACTION, exchange.getAttribute(MERCHANT_ID))
-                .map(this::toDto);
+                .map(this::toSuccessDto);
     }
 
     @PostMapping("/payouts/")
     public Mono<TransactionResponseDto> createPayout(@RequestBody PaymentTransactionDto transaction, ServerWebExchange exchange) {
         LOG.info("{} is being created...", transaction);
         return transactionService.createTransaction(transaction, TransactionType.PAYOUT, exchange.getAttribute(MERCHANT_ID))
-                .map(this::toDto);
+                .map(this::toSuccessDto)
+                .onErrorResume(this::toErrorDto);
+    }
+
+    private Mono<TransactionResponseDto> toErrorDto(Throwable ex) {
+        return Mono.just(new TransactionResponseDto(null, "FAILED", null, ex.getMessage()));
     }
 
     @GetMapping("/topups/{uuid}/details")
@@ -77,9 +82,9 @@ public class TransactionController
                 .map(this::toDetailsDto);
     }
 
-    private TransactionResponseDto toDto(final PaymentTransaction paymentTransaction)
+    private TransactionResponseDto toSuccessDto(final PaymentTransaction paymentTransaction)
     {
-        return new TransactionResponseDto(paymentTransaction.getUuid().toString(), paymentTransaction.getStatus(), "OK");
+        return new TransactionResponseDto(paymentTransaction.getUuid().toString(), paymentTransaction.getStatus().toString(), null, "OK");
     }
 
     private TransactionDetailsDto toDetailsDto(final PaymentTransaction paymentTransaction)

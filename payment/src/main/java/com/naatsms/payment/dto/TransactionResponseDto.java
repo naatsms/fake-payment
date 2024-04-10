@@ -1,11 +1,13 @@
 package com.naatsms.payment.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.naatsms.payment.enums.TransactionStatus;
 
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record TransactionResponseDto(
         @JsonProperty("transaction_id") String transactionId,
-        TransactionStatus status,
+        String status,
+        @JsonProperty("error_code") String errorCode,
         String message
         )
 {
