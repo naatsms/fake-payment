@@ -27,8 +27,9 @@ public class Card {
         @Column("card_amount") private BigDecimal amount;
 
     public static Card fromDto(CardDto cardDto) {
+        LocalDate expDate = cardDto.expDate() != null ? LocalDate.ofInstant(cardDto.expDate().toInstant(), ZoneId.systemDefault()) : null;
         return new Card(null, cardDto.cardNumber(),
-                LocalDate.ofInstant(cardDto.expDate().toInstant(), ZoneId.systemDefault()),
+                expDate,
                 cardDto.ccv(), null);
     }
 
