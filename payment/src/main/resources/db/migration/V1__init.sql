@@ -26,7 +26,7 @@ CREATE TABLE Card (
                       CONSTRAINT ccv_length CHECK (LENGTH(ccv) = 3)
 );
 
-CREATE TABLE AccountBalance (
+CREATE TABLE Account (
                                 id SERIAL PRIMARY KEY,
                                 currency_iso VARCHAR(255) REFERENCES Currency(name),
                                 merchant_id INT REFERENCES Merchant(id) ON DELETE CASCADE,
@@ -48,7 +48,7 @@ CREATE TABLE PaymentTransaction (
                                     payment_method VARCHAR(255),
                                     type VARCHAR(255),
                                     status VARCHAR(255),
-                                    account_id INT REFERENCES AccountBalance(id),
+                                    account_id INT REFERENCES Account(id),
                                     customer_id INT REFERENCES Customer(id),
                                     language_iso VARCHAR(255) REFERENCES Language(name),
                                     currency_iso VARCHAR(255) REFERENCES Currency(name),

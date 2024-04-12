@@ -1,7 +1,7 @@
 package com.naatsms.payment.strategy;
 
 import com.naatsms.payment.constants.Messages;
-import com.naatsms.payment.entity.AccountBalance;
+import com.naatsms.payment.entity.Account;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.enums.TransactionStatus;
 import com.naatsms.payment.exception.InsufficientAccountBalanceException;
@@ -38,21 +38,21 @@ public class PayoutTransactionProcessingStrategy implements TransactionProcessin
         BigDecimal amount = paymentTransaction.getAmount();
         return cardRepository.selectForUpdateByCustomerId(paymentTransaction.getCustomerId())
                 .flatMap(card -> cardRepository.updateAmountByCardId(card.getId(), card.getAmount().add(amount)))
-                .then(accountRepository.selectForUpdateById(paymentTransaction.getAccountBalanceId()))
-                .flatMap(accountBalance -> validateSufficientBalance(amount, accountBalance))
-                .flatMap(accountBalance -> accountRepository.updateAmountByAccountId(accountBalance.id(), accountBalance.amount().subtract(amount)))
+                .then(accountRepository.selectForUpdateById(paymentTransaction.getAccountId()))
+                .flatMap(account -> validateSufficientBalance(amount, account))
+                .flatMap(account -> accountRepository.updateAmountByAccountId(account.id(), account.amount().subtract(amount)))
                 .then(transactionRepository.selectForUpdateByUuid(paymentTransaction.getUuid()))
                 .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.getUuid(), TransactionStatus.SUCCESS, Messages.OK))
                 .as(transactionalOperator::transactional)
                 .map(mono -> paymentTransaction);
     }
 
-    private Mono<AccountBalance> validateSufficientBalance(final BigDecimal amount, final AccountBalance accountBalance)
+    private Mono<Account> validateSufficientBalance(final BigDecimal amount, final Account account)
     {
-        if (accountBalance.amount().compareTo(amount) < 0) {
-            throw new InsufficientAccountBalanceException("Insufficient balance on account " + accountBalance.merchantId() + " for currency " + accountBalance.currencyIso());
+        if (account.amount().compareTo(amount) < 0) {
+            throw new InsufficientAccountBalanceException("Insufficient balance on account " + account.merchantId() + " for currency " + account.currencyIso());
         }
-        return Mono.just(accountBalance);
+        return Mono.just(account);
     }
 
 }

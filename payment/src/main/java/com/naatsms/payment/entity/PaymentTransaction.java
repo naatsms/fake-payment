@@ -4,7 +4,10 @@ import com.naatsms.payment.dto.PaymentTransactionDto;
 import com.naatsms.payment.enums.PaymentMethod;
 import com.naatsms.payment.enums.TransactionStatus;
 import com.naatsms.payment.enums.TransactionType;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
@@ -38,7 +41,7 @@ public class PaymentTransaction {
     @Column("updated_at")
     private LocalDateTime updatedAt;
     @Column("account_id")
-    private Long accountBalanceId;
+    private Long accountId;
     @Column("customer_id")
     private Long customerId;
     @Column("language_iso")

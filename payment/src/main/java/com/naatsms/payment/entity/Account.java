@@ -6,8 +6,8 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 
-@Table("AccountBalance")
-public record AccountBalance(
+@Table("Account")
+public record Account(
         @Id Long id,
         @Column("merchant_id") Long merchantId,
         @Column("currency_iso") String currencyIso,

@@ -1,6 +1,6 @@
 package com.naatsms.payment.repository;
 
-import com.naatsms.payment.entity.AccountBalance;
+import com.naatsms.payment.entity.Account;
 import com.naatsms.payment.entity.projections.IdOnly;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
@@ -12,16 +12,16 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 
-public interface AccountRepository extends ReactiveCrudRepository<AccountBalance, Long>
+public interface AccountRepository extends ReactiveCrudRepository<Account, Long>
 {
-    Mono<AccountBalance> findByMerchantIdAndCurrencyIso(Long merchantId, String currencyIso);
+    Mono<Account> findByMerchantIdAndCurrencyIso(Long merchantId, String currencyIso);
 
     @Lock(LockMode.PESSIMISTIC_WRITE)
-    @Query("SELECT * from accountbalance where id = :accountId FOR UPDATE")
-    Mono<AccountBalance> selectForUpdateById(Long accountId);
+    @Query("SELECT * from account where id = :accountId FOR UPDATE")
+    Mono<Account> selectForUpdateById(Long accountId);
 
     @Modifying
-    @Query("UPDATE accountbalance SET amount = :amount WHERE id = :accountId")
+    @Query("UPDATE account SET amount = :amount WHERE id = :accountId")
     Mono<Void> updateAmountByAccountId(Long accountId, BigDecimal amount);
 
     Flux<IdOnly> findAllByMerchantId(Long merchantId);

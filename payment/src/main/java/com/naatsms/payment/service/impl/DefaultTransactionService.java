@@ -1,7 +1,7 @@
 package com.naatsms.payment.service.impl;
 
 import com.naatsms.payment.dto.PaymentTransactionDto;
-import com.naatsms.payment.entity.AccountBalance;
+import com.naatsms.payment.entity.Account;
 import com.naatsms.payment.entity.Card;
 import com.naatsms.payment.entity.Customer;
 import com.naatsms.payment.entity.PaymentTransaction;
@@ -48,10 +48,10 @@ public class DefaultTransactionService implements TransactionService
         Mono<Long> customerId = Mono.defer(() -> getOrCreateCard(transactionData))
                 .flatMap(card -> getOrCreateCustomer(transactionData, card))
                 .map(Customer::id);
-        Mono<Long> accountBalanceId = accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transactionData.currencyIso())
+        Mono<Long> accountId = accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transactionData.currencyIso())
                 .switchIfEmpty(Mono.error(() -> new AccountNotFoundException("Account not found for merchant: " + merchantId + " and currency: " + transactionData.currencyIso())))
-                .map(AccountBalance::id);
-        return Mono.zip(customerId, accountBalanceId)
+                .map(Account::id);
+        return Mono.zip(customerId, accountId)
                 .map(tuple -> PaymentTransaction.fromDto(transactionData, type, tuple.getT1(), tuple.getT2()))
                 .flatMap(transactionRepository::save);
     }
@@ -85,7 +85,7 @@ public class DefaultTransactionService implements TransactionService
 
     private Mono<PaymentTransaction> verifyAccount(PaymentTransaction transaction, Long merchantId) {
         return accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transaction.getCurrencyIso())
-                .filter(accountBalance -> accountBalance.id().equals(transaction.getAccountBalanceId()))
+                .filter(account -> account.id().equals(transaction.getAccountId()))
                 .map(account -> transaction)
                 .switchIfEmpty(Mono.error(new BusinessException("Transaction with uuid %s doesn't belong to merchant".formatted(transaction.getUuid()))));
     }
@@ -101,7 +101,7 @@ public class DefaultTransactionService implements TransactionService
     public Flux<PaymentTransaction> getTransactionsForDateRange(LocalDateTime from, LocalDateTime to, TransactionType type, Long merchantId) {
         return accountRepository.findAllByMerchantId(merchantId)
                 .map(IdOnly::getId)
-                .flatMap(accountId -> transactionRepository.findAllByTypeAndAccountBalanceIdAndCreatedAtBetween(type, accountId, from, to))
+                .flatMap(accountId -> transactionRepository.findAllByTypeAndAccountIdAndCreatedAtBetween(type, accountId, from, to))
                 .flatMap(this::fetchCustomerAndCardData);
     }
 

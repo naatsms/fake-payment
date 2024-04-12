@@ -44,7 +44,7 @@ public class FindTransactionEnrichedImpl implements FindTransactionEnriched<Paym
     public static final String LIST_BY_DATE_RANGE_AND_MERCHANT_QUERY = "SELECT " + FIELDS + "FROM paymenttransaction pt " +
             "JOIN customer cs on cs.id = pt.customer_id " +
             "JOIN card cd on cs.card_id = cd.id " +
-            "JOIN accountbalance a on a.id = pt.account_id " +
+            "JOIN account a on a.id = pt.account_id " +
             "JOIN merchant m on m.id = a.merchant_id " +
             "WHERE pt.created_at >= :dateFrom " +
             "AND pt.created_at <= :dateTo " +

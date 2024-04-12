@@ -26,6 +26,6 @@ public interface TransactionRepository extends ReactiveCrudRepository<PaymentTra
 
     Flux<PaymentTransaction> findByStatusAndType(TransactionStatus status, TransactionType type);
 
-    Flux<PaymentTransaction> findAllByTypeAndAccountBalanceIdAndCreatedAtBetween(TransactionType status, Long accountBalanceId, LocalDateTime createdAt, LocalDateTime createdAt2);
+    Flux<PaymentTransaction> findAllByTypeAndAccountIdAndCreatedAtBetween(TransactionType status, Long accountId, LocalDateTime createdAt, LocalDateTime createdAt2);
 
 }

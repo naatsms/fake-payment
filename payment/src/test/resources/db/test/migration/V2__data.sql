@@ -14,7 +14,7 @@ INSERT INTO merchant (name, secret) values
                                         ('name2', '{bcrypt}' || crypt('secret2', gen_salt('bf', 12))),
                                         ('name3', '{bcrypt}' || crypt('secret3', gen_salt('bf', 12)));
 
-INSERT INTO AccountBalance (currency_iso, merchant_id, amount) VALUES
+INSERT INTO Account (currency_iso, merchant_id, amount) VALUES
                                                                    ('USD', 1, 10000.00),
                                                                    ('EUR', 1, 8000.00),
                                                                    ('GBP', 1, 6000.00),

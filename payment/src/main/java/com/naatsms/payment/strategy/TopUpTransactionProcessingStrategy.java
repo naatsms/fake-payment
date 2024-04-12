@@ -40,8 +40,8 @@ public class TopUpTransactionProcessingStrategy implements TransactionProcessing
                 .as(transactionalOperator::transactional)
                 .flatMap(card -> validateSufficientBalance(amount, card))
                 .flatMap(card -> cardRepository.updateAmountByCardId(card.getId(), card.getAmount().subtract(amount)))
-                .then(accountRepository.selectForUpdateById(paymentTransaction.getAccountBalanceId()))
-                .flatMap(accountBalance -> accountRepository.updateAmountByAccountId(accountBalance.id(), accountBalance.amount().add(amount)))
+                .then(accountRepository.selectForUpdateById(paymentTransaction.getAccountId()))
+                .flatMap(account -> accountRepository.updateAmountByAccountId(account.id(), account.amount().add(amount)))
                 .then(transactionRepository.updateStatusByTransactionId(paymentTransaction.getUuid(), TransactionStatus.SUCCESS, Messages.OK))
                 .map(mono -> paymentTransaction);
     }
