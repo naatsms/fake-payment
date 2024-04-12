@@ -23,6 +23,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.naatsms.payment.constants.SessionKeys.MERCHANT_ID;
+import static com.naatsms.payment.databind.TimestampToLocalDateEditor.END;
+import static com.naatsms.payment.databind.TimestampToLocalDateEditor.START;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -70,13 +72,13 @@ public class TransactionController
     }
 
     @GetMapping("/transactions/list")
-    public Flux<TransactionDetailsDto> getTopUpTransactions(@RequestParam LocalDateTime dateFrom, @RequestParam LocalDateTime dateTo, ServerWebExchange exchange) {
+    public Flux<TransactionDetailsDto> getTopUpTransactions(@RequestParam(defaultValue = START) LocalDateTime dateFrom, @RequestParam(defaultValue = END) LocalDateTime dateTo, ServerWebExchange exchange) {
         return transactionService.getTransactionsForDateRange(dateFrom, dateTo, TransactionType.TRANSACTION, exchange.getAttribute(MERCHANT_ID))
                 .map(this::toDetailsDto);
     }
 
     @GetMapping("/payouts/list")
-    public Flux<TransactionDetailsDto> getPayoutTransactions(@RequestParam LocalDateTime dateFrom, @RequestParam LocalDateTime dateTo, ServerWebExchange exchange) {
+    public Flux<TransactionDetailsDto> getPayoutTransactions(@RequestParam(defaultValue = START) LocalDateTime dateFrom, @RequestParam(defaultValue = END) LocalDateTime dateTo, ServerWebExchange exchange) {
         return transactionService.getTransactionsForDateRange(dateFrom, dateTo, TransactionType.PAYOUT, exchange.getAttribute(MERCHANT_ID))
                 .map(this::toDetailsDto);
     }
