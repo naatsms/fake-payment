@@ -6,8 +6,8 @@ import com.naatsms.payment.dto.TransactionDetailsDto;
 import com.naatsms.payment.entity.NotificationLog;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.exception.BusinessException;
-import com.naatsms.payment.repository.TransactionRepository;
 import com.naatsms.payment.service.NotificationService;
+import com.naatsms.payment.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,17 +29,17 @@ public class DefaultNotificationService implements NotificationService
     @Autowired
     private ObjectMapper objectMapper;
 
-    private final TransactionRepository transactionRepository;
+    private final TransactionService transactionService;
 
-    public DefaultNotificationService(final TransactionRepository transactionRepository)
+    public DefaultNotificationService(TransactionService transactionService)
     {
-        this.transactionRepository = transactionRepository;
+        this.transactionService = transactionService;
     }
 
     @Override
     public Mono<Void> sendNotification(final UUID uuid)
     {
-        return transactionRepository.findByUuidEnriched(uuid)
+        return transactionService.getTransactionDetails(uuid)
                 .flatMap(this::sendNotification)
                 .then();
     }

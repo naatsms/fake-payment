@@ -3,7 +3,6 @@ package com.naatsms.payment.repository;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.enums.TransactionStatus;
 import com.naatsms.payment.enums.TransactionType;
-import com.naatsms.payment.repository.extensions.FindTransactionEnriched;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -15,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Repository
-public interface TransactionRepository extends ReactiveCrudRepository<PaymentTransaction, UUID>, FindTransactionEnriched<PaymentTransaction>
+public interface TransactionRepository extends ReactiveCrudRepository<PaymentTransaction, UUID>
 {
 
     @Query("SELECT * FROM paymenttransaction where uuid = :uuid FOR UPDATE")

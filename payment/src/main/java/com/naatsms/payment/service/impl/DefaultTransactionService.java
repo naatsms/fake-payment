@@ -5,6 +5,7 @@ import com.naatsms.payment.entity.AccountBalance;
 import com.naatsms.payment.entity.Card;
 import com.naatsms.payment.entity.Customer;
 import com.naatsms.payment.entity.PaymentTransaction;
+import com.naatsms.payment.entity.projections.IdOnly;
 import com.naatsms.payment.enums.TransactionType;
 import com.naatsms.payment.exception.AccountNotFoundException;
 import com.naatsms.payment.exception.BusinessException;
@@ -17,10 +18,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -47,61 +45,75 @@ public class DefaultTransactionService implements TransactionService
     @Override
     public Mono<PaymentTransaction> createTransaction(final PaymentTransactionDto transactionData, final TransactionType type, final Long merchantId)
     {
-        Mono<Long> customerId = cardRepository.findByCardNumber(transactionData.card().cardNumber())
-                .switchIfEmpty(cardRepository.save(Card.fromDto(transactionData.card())))
-                .flatMap(card -> getCustomerMono(transactionData, card))
+        Mono<Long> customerId = Mono.defer(() -> getOrCreateCard(transactionData))
+                .flatMap(card -> getOrCreateCustomer(transactionData, card))
                 .map(Customer::id);
         Mono<Long> accountBalanceId = accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transactionData.currencyIso())
-                .switchIfEmpty(Mono.error(() -> new AccountNotFoundException("Account not found for merchant: " + merchantId + "and currency: " + transactionData.currencyIso())))
+                .switchIfEmpty(Mono.error(() -> new AccountNotFoundException("Account not found for merchant: " + merchantId + " and currency: " + transactionData.currencyIso())))
                 .map(AccountBalance::id);
         return Mono.zip(customerId, accountBalanceId)
                 .map(tuple -> PaymentTransaction.fromDto(transactionData, type, tuple.getT1(), tuple.getT2()))
                 .flatMap(transactionRepository::save);
     }
 
-    private Mono<Customer> getCustomerMono(final PaymentTransactionDto transactionData, final Card card)
+    private Mono<Card> getOrCreateCard(PaymentTransactionDto transactionData) {
+        return cardRepository.findByCardNumber(transactionData.card().cardNumber())
+                .switchIfEmpty(cardRepository.save(Card.fromDto(transactionData.card())));
+    }
+
+    private Mono<Customer> getOrCreateCustomer(final PaymentTransactionDto transactionData, final Card card)
     {
         var customer = transactionData.customer();
         return customerRepository.findByFirstNameAndLastNameAndCardId(customer.firstName(), customer.lastName(), card.getId())
-                          .switchIfEmpty(customerRepository.save(Customer.fromDto(customer, card.getId())));
+                          .switchIfEmpty(customerRepository.save(Customer.fromDto(customer, card.getId())))
+                .contextWrite(context -> context.put("card", card));
     }
 
     @Override
     public Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid, TransactionType type, Long merchantId) {
-        return transactionRepository.findByUuidEnriched(transactionUuid)
+        return transactionRepository.findById(transactionUuid)
                 .flatMap(transaction -> verifyType(transaction, type))
-                .flatMap(transaction -> verifyAccount(transaction, merchantId));
+                .flatMap(transaction -> verifyAccount(transaction, merchantId))
+                .flatMap(this::fetchCustomerAndCardData);
+    }
+
+    @Override
+    public Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid) {
+        return transactionRepository.findById(transactionUuid)
+                .flatMap(this::fetchCustomerAndCardData);
     }
 
     private Mono<PaymentTransaction> verifyAccount(PaymentTransaction transaction, Long merchantId) {
         return accountRepository.findByMerchantIdAndCurrencyIso(merchantId, transaction.getCurrencyIso())
                 .filter(accountBalance -> accountBalance.id().equals(transaction.getAccountBalanceId()))
                 .map(account -> transaction)
-                .switchIfEmpty(Mono.error(new BusinessException("Transaction with uuid %d doesn't belong to merchant")));
+                .switchIfEmpty(Mono.error(new BusinessException("Transaction with uuid %s doesn't belong to merchant".formatted(transaction.getUuid()))));
     }
 
     private Mono<PaymentTransaction> verifyType(PaymentTransaction transaction, TransactionType type) {
         if (!transaction.getType().equals(type)) {
-            throw new BusinessException("No matched transaction for uuid %s and type %s".formatted(transaction.getUuid(), type));
+            return Mono.error(new BusinessException("No matched transaction for uuid %s and type %s".formatted(transaction.getUuid(), type)));
         }
         return Mono.just(transaction);
     }
 
     @Override
     public Flux<PaymentTransaction> getTransactionsForDateRange(LocalDateTime from, LocalDateTime to, TransactionType type, Long merchantId) {
-        if (from == null && to == null) {
-            from = LocalDate.now().atStartOfDay();
-            to = from.plusDays(1);
-        }
-        else if (from == null) {
-            from = LocalDateTime.MIN;
-        }
-        else if (to == null) {
-            to = LocalDateTime.MAX;
-        }
+        return accountRepository.findAllByMerchantId(merchantId)
+                .map(IdOnly::getId)
+                .flatMap(accountId -> transactionRepository.findAllByTypeAndAccountBalanceIdAndCreatedAtBetween(type, accountId, from, to))
+                .flatMap(this::fetchCustomerAndCardData);
+    }
 
-        //TODO implement
-        return null;
+    @Override
+    public Mono<PaymentTransaction> fetchCustomerAndCardData(PaymentTransaction tr) {
+        return customerRepository.findById(tr.getCustomerId())
+                .zipWhen(customer -> cardRepository.findById(customer.cardId()))
+                .flatMap(tuple -> {
+                    tr.setCustomer(tuple.getT1());
+                    tr.setCard(tuple.getT2());
+                    return Mono.just(tr);
+                });
     }
 
 }

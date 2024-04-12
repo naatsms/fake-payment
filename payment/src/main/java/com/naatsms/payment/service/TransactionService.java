@@ -15,6 +15,9 @@ public interface TransactionService
 
     Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid, TransactionType type, final Long merchantId);
 
+    Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid);
+
     Flux<PaymentTransaction> getTransactionsForDateRange(LocalDateTime from, LocalDateTime to, TransactionType type, Long merchantId);
 
+    Mono<PaymentTransaction> fetchCustomerAndCardData(PaymentTransaction tr);
 }
