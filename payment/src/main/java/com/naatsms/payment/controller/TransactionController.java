@@ -1,17 +1,21 @@
 package com.naatsms.payment.controller;
 
+import com.naatsms.payment.constants.Messages;
 import com.naatsms.payment.databind.TimestampToLocalDateEditor;
 import com.naatsms.payment.dto.PaymentTransactionDto;
 import com.naatsms.payment.dto.TransactionDetailsDto;
 import com.naatsms.payment.dto.TransactionResponseDto;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.enums.TransactionType;
+import com.naatsms.payment.exception.BusinessException;
 import com.naatsms.payment.service.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -50,12 +54,7 @@ public class TransactionController
     public Mono<TransactionResponseDto> createPayout(@RequestBody PaymentTransactionDto transaction, ServerWebExchange exchange) {
         LOG.info("{} is being created...", transaction);
         return transactionService.createTransaction(transaction, TransactionType.PAYOUT, exchange.getAttribute(MERCHANT_ID))
-                .map(this::toSuccessDto)
-                .onErrorResume(this::toErrorDto);
-    }
-
-    private Mono<TransactionResponseDto> toErrorDto(Throwable ex) {
-        return Mono.just(new TransactionResponseDto(null, "FAILED", null, ex.getMessage()));
+                .map(this::toSuccessDto);
     }
 
     @GetMapping("/topups/{uuid}/details")
@@ -92,9 +91,16 @@ public class TransactionController
         return TransactionDetailsDto.fromTransactionEntity(paymentTransaction);
     }
 
-    @ExceptionHandler
-    private void handleException(Exception e) {
-        LOG.error("An error occurred", e);
+    @ExceptionHandler(BusinessException.class)
+    public final Mono<ResponseEntity<Object>> handleException(Exception ex, ServerWebExchange exchange) {
+        if (exchange.getResponse().isCommitted()) {
+            return Mono.error(ex);
+        }
+        if (ex instanceof BusinessException exception) {
+            TransactionResponseDto dto = new TransactionResponseDto(null, null, Messages.FAILED, exception.getMessage());
+            return Mono.just(new ResponseEntity<>(dto, HttpStatus.BAD_REQUEST));
+        }
+        return Mono.error(new IllegalStateException());
     }
 
 }
