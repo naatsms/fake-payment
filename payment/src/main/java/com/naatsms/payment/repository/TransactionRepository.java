@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Repository
@@ -25,5 +26,7 @@ public interface TransactionRepository extends ReactiveCrudRepository<PaymentTra
     Mono<Long> updateStatusByTransactionId(UUID transactionId, TransactionStatus status, String message);
 
     Flux<PaymentTransaction> findByStatusAndType(TransactionStatus status, TransactionType type);
+
+    Flux<PaymentTransaction> findAllByTypeAndAccountBalanceIdAndCreatedAtBetween(TransactionType status, Long accountBalanceId, LocalDateTime createdAt, LocalDateTime createdAt2);
 
 }
