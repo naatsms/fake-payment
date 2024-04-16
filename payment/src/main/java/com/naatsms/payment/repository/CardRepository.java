@@ -17,8 +17,15 @@ public interface CardRepository extends ReactiveCrudRepository<Card, Long>
     @Query("SELECT * FROM card JOIN customer c on card.id = c.card_id where c.id = :customerId FOR UPDATE")
     Mono<Card> selectForUpdateByCustomerId(Long customerId);
 
+    @Query("SELECT * FROM card JOIN customer c on card.id = c.card_id where c.id = :customerId")
+    Mono<Card> findByCustomerId(Long customerId);
+
     @Modifying
-    @Query("UPDATE card SET card_amount = :amount WHERE id = :cardId")
-    Mono<Void> updateAmountByCardId(Long cardId, BigDecimal amount);
+    @Query("UPDATE card SET card_amount = card_amount + :amount WHERE id = :cardId")
+    Mono<Void> addAmountByCardId(Long cardId, BigDecimal amount);
+
+    @Modifying
+    @Query("UPDATE card SET card_amount = card_amount - :amount WHERE id = :cardId")
+    Mono<Void> substractAmountByCardId(Long cardId, BigDecimal amount);
 
 }
