@@ -3,7 +3,6 @@ package com.naatsms.payment.service.impl;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.enums.TransactionStatus;
 import com.naatsms.payment.enums.TransactionType;
-import com.naatsms.payment.exception.BusinessException;
 import com.naatsms.payment.repository.TransactionRepository;
 import com.naatsms.payment.service.NotificationService;
 import com.naatsms.payment.service.TransactionProcessingService;
@@ -20,8 +19,7 @@ import reactor.core.scheduler.Schedulers;
 import java.util.function.Predicate;
 
 @Service
-public class DefaultTransactionProcessingService implements TransactionProcessingService
-{
+public class DefaultTransactionProcessingService implements TransactionProcessingService {
     public static final Logger LOG = LoggerFactory.getLogger(DefaultTransactionProcessingService.class);
 
     private final TransactionProcessingStrategy topUpProcessingStrategy;
@@ -35,8 +33,7 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
             @Qualifier("topUpProcessingStrategy") final TransactionProcessingStrategy topUpProcessingStrategy,
             @Qualifier("payoutProcessingStrategy") final TransactionProcessingStrategy payOutProcessingStrategy,
             final TransactionRepository transactionRepository,
-            final NotificationService notificationService)
-    {
+            final NotificationService notificationService) {
         this.topUpProcessingStrategy = topUpProcessingStrategy;
         this.payOutProcessingStrategy = payOutProcessingStrategy;
         this.transactionRepository = transactionRepository;
@@ -44,57 +41,46 @@ public class DefaultTransactionProcessingService implements TransactionProcessin
     }
 
     @Override
-    @Scheduled(cron = "5/10 * * ? * *")
+    @Scheduled(cron = "2/4 * * ? * *")
     public void processTopUpTransactions() {
         LOG.info("Processing top up transactions, fetching transactions for processing...");
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.TRANSACTION)
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(pt -> LOG.info("Process top-up transaction {}...", pt.getUuid()))
                 .flatMap(pt -> topUpProcessingStrategy.processTransaction(pt)
+                        .doOnNext(tr -> LOG.info("Top-up transaction {} has been processed successfully", pt.getUuid()))
                         .onErrorResume(ex -> handleTransactionError(ex, pt)))
-                .doOnNext(pt -> LOG.info("Top-up transaction {} has been processed successfully", pt.getUuid()))
                 .doOnNext(this::sendNotification)
                 .subscribe();
     }
 
     @Override
-    @Scheduled(cron = "0/10 * * ? * *")
+    @Scheduled(cron = "0/4 * * ? * *")
     public void processPayoutTransactions() {
         LOG.info("Processing payout transactions, fetching transactions for processing...");
         transactionRepository.findByStatusAndType(TransactionStatus.IN_PROGRESS, TransactionType.PAYOUT)
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(pt -> LOG.info("Process payout transaction {}...", pt.getUuid()))
                 .flatMap(pt -> payOutProcessingStrategy.processTransaction(pt)
+                        .doOnNext(tr -> LOG.info("Payout transaction {} has been processed successfully", pt.getUuid()))
                         .onErrorResume(ex -> handleTransactionError(ex, pt)))
-                .doOnNext(pt -> LOG.info("Payout transaction {} has been processed successfully", pt.getUuid()))
                 .doOnNext(this::sendNotification)
                 .subscribe();
     }
 
-    private Mono<PaymentTransaction> handleTransactionError(final Throwable ex, final PaymentTransaction pt)
-    {
-        if (lockFailurePredicate.test(ex))
-        {
-            LOG.error("Failed to acquire a lock during processing, next attempt in 10 seconds");
+    private Mono<PaymentTransaction> handleTransactionError(final Throwable ex, final PaymentTransaction pt) {
+        if (lockFailurePredicate.test(ex)) {
+            LOG.error("Failed to acquire a lock during processing, next attempt in 10 seconds", ex);
             return Mono.empty();
         }
         LOG.error("Error during processing of transaction {}", pt.getUuid());
-        if (ex instanceof BusinessException) {
-            LOG.error("Processing error: {}", ex.getMessage());
-        }
-        else {
-            LOG.error("Application error: ", ex);
-        }
+        LOG.error("Application error: ", ex);
         return transactionRepository.updateStatusByTransactionId(pt.getUuid(), TransactionStatus.ERROR, ex.getMessage())
-              .thenReturn(pt);
+                .thenReturn(pt);
     }
 
-    private void sendNotification(final PaymentTransaction transaction)
-    {
-        Mono.just(transaction.getUuid())
-                .doOnSubscribe(uuid -> LOG.info("sending notification for transaction {}", uuid))
-                .flatMap(notificationService::sendNotification)
-                .subscribe();
+    private void sendNotification(final PaymentTransaction transaction) {
+        notificationService.sendNotification(transaction.getUuid()).subscribe();
     }
 
 }
