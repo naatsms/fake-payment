@@ -24,3 +24,13 @@ INSERT INTO Account (currency_iso, merchant_id, amount) VALUES
                                                                    ('USD', 3, 2000.00),
                                                                    ('EUR', 3, 4000.00),
                                                                    ('GBP', 3, 6000.00);
+
+INSERT INTO Card (card_number, ccv, exp_date, card_amount) VALUES
+                                                               ('1234567890123456', '123', '2024-12-31', 1500.00),
+                                                               ('2345678901234567', '234', '2023-11-30', 800.00),
+                                                               ('3456789012345678', '345', '2022-10-31', 700.00);
+
+INSERT INTO Customer (card_id, first_name, last_name, country) VALUES
+                                                                   (1, 'John', 'Doe', 'USA'),
+                                                                   (2, 'Alice', 'Smith', 'UK'),
+                                                                   (3, 'Michael', 'Johnson', 'Canada');
