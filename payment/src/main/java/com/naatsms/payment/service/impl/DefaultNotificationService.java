@@ -6,9 +6,12 @@ import com.naatsms.payment.dto.TransactionDetailsDto;
 import com.naatsms.payment.entity.NotificationLog;
 import com.naatsms.payment.entity.PaymentTransaction;
 import com.naatsms.payment.exception.BusinessException;
+import com.naatsms.payment.repository.NotificationRepository;
 import com.naatsms.payment.service.NotificationService;
 import com.naatsms.payment.service.TransactionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.ExhaustedRetryException;
@@ -22,6 +25,8 @@ import java.time.Duration;
 import java.util.UUID;
 
 @Service
+@Profile("main")
+@Slf4j
 @SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class DefaultNotificationService implements NotificationService
 {
@@ -30,16 +35,19 @@ public class DefaultNotificationService implements NotificationService
     private ObjectMapper objectMapper;
 
     private final TransactionService transactionService;
+    private final NotificationRepository notificationRepository;
 
-    public DefaultNotificationService(TransactionService transactionService)
+    public DefaultNotificationService(TransactionService transactionService, NotificationRepository notificationRepository)
     {
         this.transactionService = transactionService;
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
     public Mono<Void> sendNotification(final UUID uuid)
     {
         return transactionService.getTransactionDetails(uuid)
+                .doOnSubscribe(transaction -> log.info("sending notification for transaction {}", uuid))
                 .flatMap(this::sendNotification)
                 .then();
     }
@@ -55,6 +63,7 @@ public class DefaultNotificationService implements NotificationService
                 .retryWhen(Retry.backoff(5, Duration.ofSeconds(10))
                           .filter(WebClientResponseException.class::isInstance))
                 .flatMap(entity -> createNotification(entity, transaction))
+                .flatMap(notificationRepository::save)
                 .onErrorResume(ExhaustedRetryException.class, ex -> createNotification(ex, transaction))
                 .then();
     }
