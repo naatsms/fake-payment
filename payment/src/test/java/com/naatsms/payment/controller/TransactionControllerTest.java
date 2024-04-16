@@ -1,7 +1,14 @@
 package com.naatsms.payment.controller;
 
 import com.jayway.jsonpath.JsonPath;
+import com.naatsms.payment.entity.Account;
+import com.naatsms.payment.entity.Card;
+import com.naatsms.payment.repository.AccountRepository;
+import com.naatsms.payment.repository.CardRepository;
 import com.naatsms.payment.repository.TransactionRepository;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -17,10 +24,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
+/** @noinspection SpringJavaInjectionPointsAutowiringInspection*/
 @TestPropertySource(locations = "classpath:application-test.properties")
 @SpringBootTest
 @AutoConfigureWebTestClient
@@ -40,11 +49,26 @@ class TransactionControllerTest {
     }
 
     @Autowired
+    private Flyway flyway;
+    @Autowired
     private WebTestClient webTestClient;
+
+    @BeforeEach
+    void setUp() {
+        flyway.migrate();
+    }
+
+    @AfterEach
+    void tearDown() {
+        flyway.clean();
+    }
 
     @Autowired
     private TransactionRepository transactionRepository;
-
+    @Autowired
+    private CardRepository cardRepository;
+    @Autowired
+    private AccountRepository accountRepository;
 
     @Test
     void testCreateTopupSuccess()
@@ -70,6 +94,11 @@ class TransactionControllerTest {
                     StepVerifier.create(transactionRepository.findById((UUID.fromString(transactionId))))
                             .expectNextMatches(transaction -> transaction.getUuid().toString().equals(transactionId))
                             .verifyComplete();
+                    StepVerifier.create(transactionRepository.findById((UUID.fromString(transactionId)))
+                            .flatMap(tr -> cardRepository.findByCustomerId(tr.getCustomerId()))
+                            .map(Card::getAmount))
+                            .expectNextMatches(value -> value.compareTo(BigDecimal.ZERO) == 0)
+                            .verifyComplete();
                 });
     }
 
@@ -94,7 +123,7 @@ class TransactionControllerTest {
     void testCreateTopupAccountNotExists()
     {
         // Given
-        String requestJson = "{\"payment_method\":\"CARD\",\"amount\":\"10000\",\"currency\":\"PLN\",\"card_data\":{\"card_number\":\"4102778822334893\",\"exp_date\":\"11/23\",\"cvv\":\"566\"},\"language\":\"en\",\"notification_url\":\"https://proselyte.net/webhook/transaction\",\"customer\":{\"first_name\":\"John\",\"last_name\":\"Doe\",\"country\":\"BR\"}}";
+        String requestJson = "{\"payment_method\":\"CARD\",\"amount\":\"100\",\"currency\":\"PLN\",\"card_data\":{\"card_number\":\"4102778822334893\",\"exp_date\":\"11/23\",\"cvv\":\"566\"},\"language\":\"en\",\"notification_url\":\"https://proselyte.net/webhook/transaction\",\"customer\":{\"first_name\":\"John\",\"last_name\":\"Doe\",\"country\":\"BR\"}}";
         // When/Then
         webTestClient.post().uri("/api/v1/payments/topups/")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -131,6 +160,11 @@ class TransactionControllerTest {
                     StepVerifier.create(transactionRepository.findById((UUID.fromString(transactionId))))
                             .expectNextMatches(transaction -> transaction.getUuid().toString().equals(transactionId))
                             .verifyComplete();
+                    StepVerifier.create(transactionRepository.findById((UUID.fromString(transactionId)))
+                                    .flatMap(tr -> accountRepository.findById(tr.getAccountId()))
+                                    .map(Account::getAmount))
+                            .expectNextMatches(value -> BigDecimal.valueOf(9000).compareTo(value) == 0)
+                            .verifyComplete();
                 });
     }
 
@@ -138,7 +172,8 @@ class TransactionControllerTest {
     void testCreatePayoutInsufficientBalance()
     {
         // Given
-        String requestJson = "{\"payment_method\":\"CARD\",\"amount\":\"1000\",\"currency\":\"USD\",\"card_data\":{\"card_number\":\"4102778822334893\"},\"language\":\"en\",\"notification_url\":\"https://proselyte.net/webhook/transaction\",\"customer\":{\"first_name\":\"John\",\"last_name\":\"Doe\",\"country\":\"BR\"}}";// When/Then
+        String requestJson = "{\"payment_method\":\"CARD\",\"amount\":\"10001\",\"currency\":\"USD\",\"card_data\":{\"card_number\":\"4102778822334893\"},\"language\":\"en\",\"notification_url\":\"https://proselyte.net/webhook/transaction\",\"customer\":{\"first_name\":\"John\",\"last_name\":\"Doe\",\"country\":\"BR\"}}";// When/Then
+
 
         webTestClient.post().uri("/api/v1/payments/payouts/")
                 .contentType(MediaType.APPLICATION_JSON)
