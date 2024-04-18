@@ -18,10 +18,10 @@ import com.naatsms.payment.repository.CustomerRepository;
 import com.naatsms.payment.repository.TransactionRepository;
 import com.naatsms.payment.service.TransactionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,49 +33,43 @@ public class DefaultTransactionService implements TransactionService
     private final CardRepository cardRepository;
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
+    private final DefaultOperationService operationService;
+    private final TransactionalOperator transactionalOperator;
 
-    public DefaultTransactionService(final TransactionRepository transactionRepository, final CardRepository cardRepository, final CustomerRepository customerRepository, final AccountRepository accountRepository)
+    public DefaultTransactionService(final TransactionRepository transactionRepository, final CardRepository cardRepository, final CustomerRepository customerRepository, final AccountRepository accountRepository, DefaultOperationService operationService, TransactionalOperator transactionalOperator)
     {
         this.transactionRepository = transactionRepository;
         this.cardRepository = cardRepository;
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
+        this.operationService = operationService;
+        this.transactionalOperator = transactionalOperator;
     }
 
     @Override
-    public Mono<PaymentTransaction> createTransaction(final PaymentTransactionDto transactionData, final TransactionType type, final Long merchantId)
+    public Mono<PaymentTransaction> createTopUpTransaction(final PaymentTransactionDto transactionData, final Long merchantId)
     {
         return getOrCreateCard(transactionData)
-                .flatMap(card -> getOrCreateCustomer(transactionData, card)
-                        .flatMap(customer -> getAccountOrError(transactionData, merchantId)
-                                .flatMap(account -> holdAmountOnAccount(account, transactionData.amount(), type))
-                                .flatMap(account -> holdAmountOnCard(card, transactionData.amount(), type)
-                                        .map(cd -> PaymentTransaction.fromDto(transactionData, type, customer.id(), account.getId())))
-                                .flatMap(transactionRepository::save)));
+                .flatMap(card -> validateCardBalance(card, transactionData))
+                .flatMap(card -> getOrCreateCustomer(transactionData, card))
+                .zipWith(getAccountOrError(transactionData, merchantId))
+                .map(tuple -> PaymentTransaction.fromDto(transactionData, TransactionType.TRANSACTION, tuple.getT1().id(), tuple.getT2().getId()))
+                .flatMap(operationService::withdrawCardBalance)
+                .flatMap(transactionRepository::save)
+                .as(transactionalOperator::transactional);
     }
 
-    private Mono<Account> holdAmountOnAccount(Account account, BigDecimal amount, TransactionType type) {
-        if (type.equals(TransactionType.PAYOUT)) {
-            if (account.getAmount().compareTo(amount) >= 0) {
-                return accountRepository.substractAmountByAccountId(account.getId(), amount)
-                        .thenReturn(account);
-            } else {
-                return Mono.error(new InsufficientAccountBalanceException(Messages.PAYOUT_MIN_AMOUNT));
-            }
-        }
-        return Mono.just(account);
-    }
-
-    private Mono<Card> holdAmountOnCard(Card card, BigDecimal amount, TransactionType type) {
-        if (type.equals(TransactionType.TRANSACTION)) {
-            if (card.getAmount().compareTo(amount) >= 0) {
-                return cardRepository.substractAmountByCardId(card.getId(), amount)
-                        .thenReturn(card);
-            } else {
-                return Mono.error(new InsufficientCardBalanceException(Messages.PAYMENT_METHOD_NOT_ALLOWED));
-            }
-        }
-        return Mono.just(card);
+    @Override
+    public Mono<PaymentTransaction> createPayoutTransaction(final PaymentTransactionDto transactionData, final Long merchantId)
+    {
+        return getOrCreateCard(transactionData)
+                .flatMap(card -> getOrCreateCustomer(transactionData, card))
+                .zipWith(getAccountOrError(transactionData, merchantId)
+                        .flatMap(account -> validateAccountBalance(account, transactionData)))
+                .map(tuple -> PaymentTransaction.fromDto(transactionData, TransactionType.TRANSACTION, tuple.getT1().id(), tuple.getT2().getId()))
+                .flatMap(operationService::withdrawAccountBalance)
+                .flatMap(transactionRepository::save)
+                .as(transactionalOperator::transactional);
     }
 
     private Mono<Account> getAccountOrError(PaymentTransactionDto transactionData, Long merchantId) {
@@ -86,6 +80,20 @@ public class DefaultTransactionService implements TransactionService
     private Mono<Card> getOrCreateCard(PaymentTransactionDto transactionData) {
         return cardRepository.findByCardNumber(transactionData.card().cardNumber())
                 .switchIfEmpty(cardRepository.save(Card.fromDto(transactionData.card())));
+    }
+
+    private Mono<Card> validateCardBalance(Card card, PaymentTransactionDto transactionData) {
+        if (card.getAmount().compareTo(transactionData.amount()) < 0) {
+            return Mono.error(new InsufficientCardBalanceException(Messages.PAYMENT_METHOD_NOT_ALLOWED));
+        }
+        return Mono.just(card);
+    }
+
+    private Mono<Account> validateAccountBalance(Account account, PaymentTransactionDto transactionData) {
+        if (account.getAmount().compareTo(transactionData.amount()) < 0) {
+            return Mono.error(new InsufficientAccountBalanceException(Messages.PAYOUT_MIN_AMOUNT));
+        }
+        return Mono.just(account);
     }
 
     private Mono<Customer> getOrCreateCustomer(final PaymentTransactionDto transactionData, final Card card) {

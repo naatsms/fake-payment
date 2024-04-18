@@ -55,12 +55,13 @@ public class DefaultOperationService implements OperationService {
     }
 
     @Override
-    public Mono<Void> withdrawAccountBalance(PaymentTransaction transaction) {
+    public Mono<PaymentTransaction> withdrawAccountBalance(PaymentTransaction transaction) {
         return Mono.just(transaction)
                 .flatMap(emitErrorWithProbability(errorProbability))
                 .map(PaymentTransaction::getAmount)
                 .zipWith(accountRepository.selectForUpdateById(transaction.getAccountId()))
-                .flatMap(tuple -> accountRepository.addAmountByAccountId(tuple.getT2().getId(), tuple.getT1()));
+                .flatMap(tuple -> accountRepository.addAmountByAccountId(tuple.getT2().getId(), tuple.getT1()))
+                .thenReturn(transaction);
     }
 
     private static Function<PaymentTransaction, Mono<PaymentTransaction>> emitErrorWithProbability(Float errorProbability) {

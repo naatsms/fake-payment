@@ -11,6 +11,6 @@ public interface OperationService {
 
     Mono<Void> topUpAccountBalance(PaymentTransaction transaction);
 
-    Mono<Void> withdrawAccountBalance(PaymentTransaction transaction);
+    Mono<PaymentTransaction> withdrawAccountBalance(PaymentTransaction transaction);
 
 }

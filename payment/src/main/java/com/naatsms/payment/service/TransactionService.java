@@ -11,7 +11,9 @@ import java.util.UUID;
 
 public interface TransactionService
 {
-    Mono<PaymentTransaction> createTransaction(PaymentTransactionDto transactionData, TransactionType type, final Long merchant);
+    Mono<PaymentTransaction> createTopUpTransaction(final PaymentTransactionDto transactionData, final Long merchantId);
+
+    Mono<PaymentTransaction> createPayoutTransaction(final PaymentTransactionDto transactionData, final Long merchantId);
 
     Mono<PaymentTransaction> getTransactionDetails(UUID transactionUuid, TransactionType type, final Long merchantId);
 

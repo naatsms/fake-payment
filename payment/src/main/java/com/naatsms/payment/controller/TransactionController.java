@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -48,14 +48,14 @@ public class TransactionController
     @PostMapping("/topups/")
     public Mono<TransactionResponseDto> createTopUp(@RequestBody PaymentTransactionDto transaction, ServerWebExchange exchange) {
         LOG.info("{} is being created...", transaction);
-        return transactionService.createTransaction(transaction, TransactionType.TRANSACTION, exchange.getAttribute(MERCHANT_ID))
+        return transactionService.createTopUpTransaction(transaction, exchange.getAttribute(MERCHANT_ID))
                 .map(this::toSuccessDto);
     }
 
     @PostMapping("/payouts/")
     public Mono<TransactionResponseDto> createPayout(@RequestBody PaymentTransactionDto transaction, ServerWebExchange exchange) {
         LOG.info("{} is being created...", transaction);
-        return transactionService.createTransaction(transaction, TransactionType.PAYOUT, exchange.getAttribute(MERCHANT_ID))
+        return transactionService.createPayoutTransaction(transaction, exchange.getAttribute(MERCHANT_ID))
                 .map(this::toSuccessDto);
     }
 
