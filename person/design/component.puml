@@ -1,0 +1,49 @@
+@startuml
+
+package "User Management Application" {
+    package "Controller Layer" {
+            [UserController] as uc
+            [VerificationController] as vc
+    }
+
+    package "Facade Layer" {
+            [UserFacade] as uf
+            [VerificationFacade] as vf
+    }
+
+    package "Service Layer" {
+            [ProfileService] as ps
+            [IndividualsService] as is
+            [AddressService] as ads
+            [VerificationService] as vs
+            [ProfileHistoryService] as phs
+        }
+    }
+
+    package "DAO Layer" {
+            [IndividualsRepository] as ur
+            [AddressRepository] as ar
+            [ProfileRepository] as pr
+            [VerificationRepository] as vr
+            [HistoryRepository] as hr
+    }
+
+    uc --> uf : POST / PUT / GET
+    vc --> vf
+
+    uf --> is
+    uf --> ads
+    uf --> vs
+    uf --> phs
+
+    is -> ps
+
+    vf -> vs
+
+    ps --> pr
+    ads --> ar
+    is --> ur
+    vs --> vr
+    phs --> hr
+
+@enduml

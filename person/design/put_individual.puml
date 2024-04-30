@@ -1,0 +1,39 @@
+@startuml
+actor "External Client" as client
+participant "App API" as api
+participant "UserFacade" as uf
+participant "IndividualsService" as is
+participant "ProfileService" as ps
+participant "ProfileHistoryService" as ph
+database "Postgres" as postgres
+
+client -> api: Request to update an individual
+activate api
+
+api -> uf: Update Individual
+activate uf
+uf -> uf : check if exists
+uf -> is : get Individual
+activate is
+is -> ps : get Profile
+activate ps
+ps -> postgres : load profile
+ps <-- postgres : profile
+return profile
+is -> postgres : load individual
+is <-- postgres : individual
+return individual
+uf -> uf : build changes map
+uf -> is : save individual
+activate is
+is -> postgres : update individual
+is <-- postgres : successfully updated
+return success
+uf -> ph : create history entry
+activate ph
+ph -> postgres : insert history entry
+ph <-- postgres : success
+return success
+return Customer updated successfully
+deactivate api
+@enduml

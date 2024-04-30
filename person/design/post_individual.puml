@@ -1,0 +1,48 @@
+@startuml
+actor "External Client" as client
+participant "App API" as api
+participant "UserFacade" as uf
+participant "AddressService" as ads
+participant "IndividualsService" as is
+participant "ProfileService" as ps
+participant "VerificationService" as vs
+participant "ProfileHistoryService" as ph
+database "Postgres" as postgres
+
+client -> api: Request to create an individual
+activate api
+
+api -> uf: Create Individual
+activate uf
+
+uf -> uf : check if exists?
+uf -> ads : get or create address
+activate ads
+ads -> postgres : query address, create if not exists
+ads <-- postgres : address
+return address
+uf -> is : create individual
+activate is
+is -> ps : create profile
+activate ps
+ps -> postgres : store profile
+ps <-- postgres : profile
+return profile
+is -> postgres : store individual
+is <-- postgres : individual
+is -> ph : create History Entry
+activate ph
+ph -> ph : calculate delta?
+ph -> postgres : store history entry
+ph <-- postgres : history entry
+return historyEntry
+return individual
+uf -> vs : create verification
+activate vs
+vs -> postgres : store initial verification
+vs <-- postgres : verification
+return verification
+return individual
+return Customer created successfully
+deactivate api
+@enduml
