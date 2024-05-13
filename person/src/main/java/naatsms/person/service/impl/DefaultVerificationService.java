@@ -1,10 +1,11 @@
-package naatsms.person.service;
+package naatsms.person.service.impl;
 
 import naatsms.person.entity.Verification;
 import naatsms.person.enums.ProfileType;
 import naatsms.person.enums.VerificationStatus;
 import naatsms.person.repository.ProfileRepository;
 import naatsms.person.repository.VerificationRepository;
+import naatsms.person.service.VerificationService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
