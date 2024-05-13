@@ -1,20 +1,36 @@
-@startuml
+@startuml "create top up transaction"
+autoactivate on
 participant "Merchant" as merchant
 box "Payment Provider" #LightBlue
 participant "Transaction API" as api
-participant "Transaction" as tr
+participant "TransactionService" as tr
+participant "OperationService" as op
+participant "CardService" as cd
 end box
 database "Postgres" as db
 
-merchant -> api : request 
-activate api
-api -> tr : create transaction
-activate tr
-tr -> db : store transaction
-tr <- db : transaction saved
-api <- tr : transaction saved
-deactivate tr
-api -> merchant: 201 IN_PROGRESS
-deactivate api
+alt #IndianRed insufficient balance
+    merchant -> api : request
+    api -> tr : create transaction
+    tr -> cd : get card for transaction
+    return Insufficient balance
+    return error
+    return not created
+else #LightGreen sufficient balance
+    merchant -> api : request
+    api -> tr : create transaction
+    tr -> cd : get card for transaction
+    return card
+end
+group transaction
+tr -> op : hold amount
+op -> db : update balance
+return updated successfully
+return success
+tr -> db : save transaction
+return transaction saved
+end
+return transaction saved
+return 201 IN_PROGRESS
 
 @enduml

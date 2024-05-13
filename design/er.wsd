@@ -1,0 +1,96 @@
+@startuml
+
+skinparam linetype ortho
+
+together {
+    entity Merchant {
+        * id: serial
+        ..
+        name: varchar
+        secret: varchar
+    }
+
+    entity Account {
+        * id: serial
+        ..
+        amount: decimal
+        currencyIso: ref(Currency)
+        merchantId: ref(Merchant)
+    }
+}
+
+entity PaymentTransaction {
+    * uuid: UUID
+    ..
+    paymentMethod: PaymentMethod
+    type: TransactionType
+    status: TransactionStatus
+    amount: decimal
+    createdAt: timestamp
+    modifiedAt: timestamp
+    message: varchar
+    notificationUrl: varchar
+    accountId: ref(Account)
+    customerId: ref(Customer)
+    languageIso: ref(Language)
+    currencyIso: ref(Currency)
+}
+
+together {
+    entity Currency {
+        * id: serial
+        ..
+        name: varchar
+        symbol: varchar
+    }
+
+    entity Language {
+        * id: serial
+        ..
+        name: varchar
+    }
+}
+
+together {
+    entity Card {
+        * id: serial
+        ..
+        cardNumber: varchar
+        ccv: varchar
+        expDate: date
+        amount: money
+    }
+
+    entity Customer {
+        * id: serial
+        ..
+        firstName: varchar
+        lastName: varchar
+        country: varchar
+        cardId: ref(Card)
+    }
+}
+
+entity Notification {
+    * id: serial
+    ..
+    requestPayload: varchar
+    responsePayload: varchar
+    responseStatus: varchar
+    url: varchar
+    createdAt: timestamp
+    nextRetryAt: timestamp
+    retriesLeft: integer
+    transactionId: UUID <<FK>>
+}
+
+Merchant ||--o{ Account
+PaymentTransaction }o--||  Currency
+PaymentTransaction }o--||  Language
+PaymentTransaction }o--|| Customer
+PaymentTransaction }o--|| Account
+Account }o--|| Currency
+Card ||--|{ Customer
+Notification  ||--|| PaymentTransaction
+
+@enduml

@@ -1,56 +1,60 @@
-@startuml
-top to bottom direction
-skinparam linetype ortho
-[merchant]
-component PaymentProvider {
-    portin " " as p1
-    component "Transaction API" as api {
-    [Security] as security
-    }
-    [TransactionProcessor] as trProc
-    together {
-    [UserService] as user
-    () "intUser"
-    }
-    together {
-    [TransactionService] as tr
-    () "intTransaction"
-    }
-    together {
-    [AccountService] as acc
-    () "intAccount"
-    }
-    together {
-    [CardService] as card
-    () "intCard"
-    }
-    together {
-    [NotificationService] as not
-    () "intNotification"
-    }
-    portout "WebClient" as p2
-}
+@startuml ("Payment API Component")
 
-merchant ..> p1 : request
-security --> intUser
-api <-- p1
-intUser -- user
-intTransaction -- tr
-intCard -- card
-intAccount -- acc
-intNotification -- not
-api --> intTransaction
+'skinparam linetype polyline
+skinparam nodesep 20
+skinparam ranksep 50
+
+component Payment {
+
+    component "TransactionController" as api
+    [TransactionProcessingService] as trProc
+    together {
+        [UserService] as user
+        () " " as intUser
+    }
+    together {
+        [OperationService] as op
+        () " " as intOp
+    }
+    together {
+        [TransactionService] as tr
+        () " " as intTr
+    }
+    together {
+        [AccountService] as acc
+        () " " as intAccount
+    }
+    together {
+        [CardService] as card
+        () " " as intCard
+    }
+    together {
+        [NotificationService] as not
+        () " " as intNot
+    }
+}
+user -l- intUser
+card -u- intCard
+acc -u- intAccount
+not -u- intNot
+tr -u- intTr
+op -l- intOp
+
+tr --> intOp
+
+api -d-> intTr
+
+
+trProc --> intNot
+trProc -u-> intOp
+op -d-> intAccount
+op -d-> intCard
+
 user -> Postgres
 tr -> Postgres
 card -> Postgres
 acc -> Postgres
 not -> Postgres
-trProc --> intTransaction
-intNotification <-left- tr
-trProc -> intAccount
-trProc -> intCard
-not -- p2
-p2 ..> (HTTP) : use
 
 database "Postgres" {
 
