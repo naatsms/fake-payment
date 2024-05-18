@@ -6,6 +6,7 @@ import naatsms.person.entity.Profile;
 import naatsms.person.mapper.IndividualMapper;
 import naatsms.person.repository.IndividualRepository;
 import naatsms.person.service.IndividualService;
+import naatsms.person.service.ProfileHistoryService;
 import naatsms.person.service.ProfileService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -17,10 +18,12 @@ public class DefaultIndividualService implements IndividualService {
 
     private final ProfileService profileService;
     private final IndividualRepository individualRepository;
+    private final ProfileHistoryService profileHistoryService;
 
-    public DefaultIndividualService(ProfileService profileService, IndividualRepository repository) {
+    public DefaultIndividualService(ProfileService profileService, IndividualRepository repository, ProfileHistoryService profileHistoryService) {
         this.profileService = profileService;
         this.individualRepository = repository;
+        this.profileHistoryService = profileHistoryService;
     }
 
     @Override
@@ -33,6 +36,8 @@ public class DefaultIndividualService implements IndividualService {
     public Mono<Individual> createIndividual(IndividualDto individual) {
         return profileService.createProfile(individual.profile())
                 .map(profile -> doCreateIndividual(individual, profile))
+                .flatMap(ind -> profileHistoryService.createHistoryEntry(ind)
+                        .thenReturn(ind))
                 .flatMap(individualRepository::save);
     }
 
