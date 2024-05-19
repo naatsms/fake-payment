@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import naatsms.person.enums.ProfileType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -24,7 +25,7 @@ public class ProfileHistory {
     @Column("profile_id")
     private UUID profileId;
     @Column("profile_type")
-    private String profileType;
+    private ProfileType profileType;
     @Column("reason")
     private String reason;
     @Column("comment")

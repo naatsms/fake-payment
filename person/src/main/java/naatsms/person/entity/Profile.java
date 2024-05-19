@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import naatsms.person.enums.ItemStatus;
+import naatsms.person.enums.ProfileType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
@@ -43,7 +44,8 @@ public class Profile {
     private LocalDateTime verifiedAt;
     @Column("archived_at")
     private LocalDateTime archivedAt;
-
+    @Column("type")
+    private ProfileType type;
     @Transient
     private Address address;
 }
