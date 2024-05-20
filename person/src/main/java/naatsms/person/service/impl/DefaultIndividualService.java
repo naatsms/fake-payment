@@ -28,7 +28,7 @@ public class DefaultIndividualService implements IndividualService {
 
     @Override
     public Mono<Individual> getIndividualById(UUID uuid) {
-        return individualRepository.findById(uuid)
+        return individualRepository.findByProfileId(uuid)
                 .flatMap(this::fetchProfile);
     }
 
@@ -36,16 +36,25 @@ public class DefaultIndividualService implements IndividualService {
     public Mono<Individual> createIndividual(IndividualDto individual) {
         return profileService.createProfile(individual.profile())
                 .map(profile -> doCreateIndividual(individual, profile))
-                .flatMap(ind -> profileHistoryService.createHistoryEntry(ind)
-                        .thenReturn(ind))
+                .flatMap(user -> profileHistoryService.createInitialHistoryEntry(user)
+                        .thenReturn(user))
                 .flatMap(individualRepository::save);
     }
 
-
     private Individual doCreateIndividual(IndividualDto individual, Profile profile) {
         var entity = IndividualMapper.INSTANCE.individualFromDto(individual);
-        entity.setProfileId(profile.getProfileId());
+        entity.setProfileId(profile.getId());
         return entity;
+    }
+
+    @Override
+    public Mono<Individual> updateIndividual(UUID id, IndividualDto updatedIndividual) {
+        return getIndividualById(id)
+                .cache()
+                .switchIfEmpty(Mono.error(IllegalArgumentException::new))
+                .zipWhen(old -> Mono.just(IndividualMapper.INSTANCE.updateFromDto(old, updatedIndividual)))
+                .flatMap(tuple -> profileHistoryService.createHistoryEntry(tuple.getT1(), tuple.getT2()).thenReturn(tuple.getT2()))
+                .flatMap(individualRepository::save);
     }
 
     private Mono<Individual> fetchProfile(Individual individual) {

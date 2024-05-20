@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface IndividualService {
 
     Mono<Individual> getIndividualById(UUID uuid);
-
     Mono<Individual> createIndividual(IndividualDto individualDto);
+    Mono<Individual> updateIndividual(UUID id, IndividualDto updatedIndividual);
 
 }
