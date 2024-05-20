@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record AddressDto(
         UUID id,
-        Long countryId,
+        Integer countryId,
         String address,
         String zipCode,
         String city,

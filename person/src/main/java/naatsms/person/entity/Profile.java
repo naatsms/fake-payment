@@ -22,8 +22,8 @@ import java.util.UUID;
 public class Profile {
 
     @Id
-    @Column("profile_id")
-    private UUID profileId;
+    @Column("id")
+    private UUID id;
     @Column("secret_key")
     private String secretKey;
     @Column("first_name")

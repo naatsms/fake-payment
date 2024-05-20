@@ -1,5 +1,6 @@
 package naatsms.person.entity;
 
+import io.r2dbc.postgresql.codec.Json;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Table("profile_history")
+@Table("person.profile_history")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,7 +32,7 @@ public class ProfileHistory {
     @Column("comment")
     private String comment;
     @Column("changed_values")
-    private String changedValues;
+    private Json changedValues;
     @Column("created_at")
     private LocalDateTime createdAt;
 

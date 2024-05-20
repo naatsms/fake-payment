@@ -2,7 +2,7 @@ package naatsms.person.dto;
 import java.util.UUID;
 
 public record IndividualDto(
-        UUID id,
+        UUID profileId,
         String passportNumber,
         String phoneNumber,
         String email,

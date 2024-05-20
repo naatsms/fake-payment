@@ -13,7 +13,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Table("verification_statuses")
+@Table("person.verification_statuses")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

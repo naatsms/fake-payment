@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import naatsms.person.enums.ItemStatus;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -16,14 +16,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("merchants")
+@Table("person.merchants")
 public class Merchant {
 
     @Id
     @Column("id")
     private UUID id;
-    @Column("profile_id")
-    private UUID profileId;
     @Column("company_name")
     private String companyName;
     @Column("company_id")
@@ -32,11 +30,13 @@ public class Merchant {
     private String email;
     @Column("phone_number")
     private String phoneNumber;
+    @Column("status")
+    private ItemStatus status;
+    @Column("filled")
+    private boolean filled;
     @Column("created_at")
     private LocalDateTime createdAt;
     @Column("updated_at")
     private LocalDateTime updatedAt;
 
-    @Transient
-    private Profile profile;
 }

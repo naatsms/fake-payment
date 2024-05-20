@@ -15,16 +15,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("addresses")
+@Table("person.addresses")
 public class Address {
     @Id
     private UUID id;
 
     @Column("country_id")
-    private Long countryId;
+    private Integer countryId;
 
     @Column("address")
-    private String address;
+    private String addressLine;
 
     @Column("zip_code")
     private String zipCode;
