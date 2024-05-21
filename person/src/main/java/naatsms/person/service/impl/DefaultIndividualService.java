@@ -3,6 +3,7 @@ package naatsms.person.service.impl;
 import naatsms.person.dto.IndividualDto;
 import naatsms.person.entity.Individual;
 import naatsms.person.entity.Profile;
+import naatsms.person.enums.ItemStatus;
 import naatsms.person.mapper.IndividualMapper;
 import naatsms.person.repository.IndividualRepository;
 import naatsms.person.service.IndividualService;
@@ -29,8 +30,9 @@ public class DefaultIndividualService implements IndividualService {
     @Override
     public Mono<Individual> getIndividualById(UUID uuid) {
         return individualRepository.findByProfileId(uuid)
-                .switchIfEmpty(Mono.error(IllegalArgumentException::new))
-                .flatMap(this::fetchProfile);
+                .flatMap(this::fetchProfile)
+                .filter(user -> user.getProfile().getStatus().equals(ItemStatus.ACTIVE))
+                .switchIfEmpty(Mono.error(IllegalArgumentException::new));
     }
 
     @Override
