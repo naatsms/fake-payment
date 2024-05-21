@@ -29,6 +29,7 @@ public class DefaultIndividualService implements IndividualService {
     @Override
     public Mono<Individual> getIndividualById(UUID uuid) {
         return individualRepository.findByProfileId(uuid)
+                .switchIfEmpty(Mono.error(IllegalArgumentException::new))
                 .flatMap(this::fetchProfile);
     }
 
@@ -55,6 +56,14 @@ public class DefaultIndividualService implements IndividualService {
                 .zipWhen(old -> Mono.just(IndividualMapper.INSTANCE.updateFromDto(old, updatedIndividual)))
                 .flatMap(tuple -> profileHistoryService.createHistoryEntry(tuple.getT1(), tuple.getT2()).thenReturn(tuple.getT2()))
                 .flatMap(individualRepository::save);
+    }
+
+    @Override
+    public Mono<Void> archiveIndividual(UUID id) {
+        return getIndividualById(id)
+                .map(Individual::getProfile)
+                .flatMap(profileService::archiveProfile)
+                .then();
     }
 
     private Mono<Individual> fetchProfile(Individual individual) {

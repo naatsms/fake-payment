@@ -3,6 +3,7 @@ package naatsms.person.service.impl;
 import naatsms.person.dto.ProfileDto;
 import naatsms.person.entity.Address;
 import naatsms.person.entity.Profile;
+import naatsms.person.enums.ItemStatus;
 import naatsms.person.mapper.ProfileMapper;
 import naatsms.person.repository.ProfileRepository;
 import naatsms.person.service.AddressService;
@@ -10,6 +11,7 @@ import naatsms.person.service.ProfileService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -36,6 +38,13 @@ public class DefaultProfileService implements ProfileService {
                 .flatMap(this::fetchAddress);
     }
 
+    @Override
+    public Mono<Profile> archiveProfile(Profile user) {
+        user.setStatus(ItemStatus.DELETED);
+        user.setArchivedAt(LocalDateTime.now());
+        return profileRepository.save(user);
+    }
+
     private Mono<Profile> fetchAddress(Profile profile) {
         return addressService.getAddressById(profile.getAddressId())
                 .doOnNext(profile::setAddress)
@@ -45,6 +54,7 @@ public class DefaultProfileService implements ProfileService {
     private Profile profileFromDto(ProfileDto profileDto, Address address) {
         var profile = ProfileMapper.INSTANCE.profileFromDto(profileDto);
         profile.setAddress(address);
+        profile.setStatus(ItemStatus.ACTIVE);
         profile.setAddressId(address.getId());
         return profile;
     }

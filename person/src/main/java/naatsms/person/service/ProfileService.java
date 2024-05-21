@@ -12,4 +12,5 @@ public interface ProfileService {
 
     Mono<Profile> getProfileById(UUID id);
 
+    Mono<Profile> archiveProfile(Profile user);
 }
