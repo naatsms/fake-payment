@@ -30,6 +30,7 @@ CREATE TABLE person.profiles (
                                  first_name VARCHAR(32),
                                  last_name VARCHAR(32),
                                  status VARCHAR(64),
+                                 type VARCHAR(64),
                                  filled BOOLEAN,
                                  address_id UUID REFERENCES person.addresses(id),
                                  created_at TIMESTAMP DEFAULT now(),
@@ -51,13 +52,15 @@ CREATE TABLE person.merchants (
 );
 
 CREATE TABLE person.merchant_members (
-                                 profile_id UUID REFERENCES person.profiles(id) PRIMARY KEY,
+                                 id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+                                 profile_id UUID REFERENCES person.profiles(id),
                                  merchant_id UUID REFERENCES person.merchants(id),
                                  member_role VARCHAR(32)
 );
 
 CREATE TABLE person.individuals (
-                                    profile_id UUID REFERENCES person.profiles(id) PRIMARY KEY,
+                                    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+                                    profile_id UUID REFERENCES person.profiles(id),
                                     passport_number VARCHAR(32),
                                     phone_number VARCHAR(32),
                                     email VARCHAR(32)

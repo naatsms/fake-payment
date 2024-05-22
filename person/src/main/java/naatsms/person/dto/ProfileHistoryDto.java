@@ -1,5 +1,6 @@
 package naatsms.person.dto;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import naatsms.person.enums.ProfileType;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,6 @@ public record ProfileHistoryDto(
         ProfileType profileType,
         String reason,
         String comment,
-        String changedValues,
+        @JsonRawValue String changedValues,
         LocalDateTime createdAt
 ) {}
