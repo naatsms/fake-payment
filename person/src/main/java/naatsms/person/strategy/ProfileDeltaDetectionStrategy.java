@@ -17,15 +17,13 @@ public class ProfileDeltaDetectionStrategy implements DeltaDetectionStrategy<Pro
         var delta = new JsonObject();
         if (notEquals(Profile::getAddressId, oldProfile, newProfile)) {
             delta.addProperty("addressId", newProfile.getAddressId().toString());
+            //TODO calculate Address delta
         }
         if (notEquals(Profile::getFirstName, oldProfile, newProfile)) {
             delta.addProperty("firstName", newProfile.getFirstName());
         }
         if (notEquals(Profile::getLastName, oldProfile, newProfile)) {
             delta.addProperty("lastName", newProfile.getLastName());
-        }
-        if (notEquals(Profile::getArchivedAt, oldProfile, newProfile)) {
-            delta.addProperty("archivedAt", newProfile.getArchivedAt().toString());
         }
         if (notEquals(Profile::getSecretKey, oldProfile, newProfile)) {
             delta.addProperty("secretKey", newProfile.getSecretKey());
