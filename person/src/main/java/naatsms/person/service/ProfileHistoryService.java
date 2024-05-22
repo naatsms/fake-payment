@@ -9,8 +9,6 @@ import java.util.UUID;
 
 public interface ProfileHistoryService {
 
-    Mono<ProfileHistory> createInitialHistoryEntry(Individual individual);
-
     Mono<ProfileHistory> createHistoryEntry(Individual oldUser, Individual newUser);
 
     Flux<ProfileHistory> getProfileHistoryForProfileId(UUID id);

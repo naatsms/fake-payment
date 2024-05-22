@@ -1,9 +1,11 @@
 package naatsms.person.service.impl;
 
 import naatsms.person.dto.IndividualDto;
+import naatsms.person.entity.Address;
 import naatsms.person.entity.Individual;
 import naatsms.person.entity.Profile;
 import naatsms.person.enums.ItemStatus;
+import naatsms.person.enums.ProfileType;
 import naatsms.person.mapper.IndividualMapper;
 import naatsms.person.repository.IndividualRepository;
 import naatsms.person.service.IndividualService;
@@ -39,23 +41,31 @@ public class DefaultIndividualService implements IndividualService {
     public Mono<Individual> createIndividual(IndividualDto individual) {
         return profileService.createProfile(individual.profile())
                 .map(profile -> doCreateIndividual(individual, profile))
-                .flatMap(user -> profileHistoryService.createInitialHistoryEntry(user)
+                .flatMap(user -> profileHistoryService.createHistoryEntry(emptyUser(), user)
                         .thenReturn(user))
                 .flatMap(individualRepository::save);
     }
 
+    private Individual emptyUser() {
+        return Individual.builder()
+                .profile(Profile.builder().address(new Address()).build())
+                .build();
+    }
+
     private Individual doCreateIndividual(IndividualDto individual, Profile profile) {
         var entity = IndividualMapper.INSTANCE.individualFromDto(individual);
+        profile.setType(ProfileType.INDIVIDUAL);
         entity.setProfileId(profile.getId());
+        entity.setProfile(profile);
         return entity;
     }
 
     @Override
     public Mono<Individual> updateIndividual(UUID id, IndividualDto updatedIndividual) {
+        var mapper = IndividualMapper.INSTANCE;
         return getIndividualById(id)
-                .cache()
                 .switchIfEmpty(Mono.error(IllegalArgumentException::new))
-                .zipWhen(old -> Mono.just(IndividualMapper.INSTANCE.updateFromDto(old, updatedIndividual)))
+                .zipWhen(old -> Mono.just(mapper.updateFromDto(mapper.clone(old), updatedIndividual)))
                 .flatMap(tuple -> profileHistoryService.createHistoryEntry(tuple.getT1(), tuple.getT2()).thenReturn(tuple.getT2()))
                 .flatMap(individualRepository::save);
     }

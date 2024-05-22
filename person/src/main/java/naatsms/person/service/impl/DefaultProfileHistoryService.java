@@ -36,13 +36,6 @@ public class DefaultProfileHistoryService implements ProfileHistoryService {
                 .flatMap(profileHistoryRepository::save);
     }
 
-    @Override
-    public Mono<ProfileHistory> createInitialHistoryEntry(Individual individual) {
-        return calculateDelta(Individual.builder().profile(new Profile()).build(), individual)
-                .flatMap(json -> toProfileHistory(json, individual.getProfile()))
-                .flatMap(profileHistoryRepository::save);
-    }
-
     private Mono<ProfileHistory> toProfileHistory(JsonObject json, Profile profile) {
         return Mono.just(ProfileHistory.builder()
                 .profileId(profile.getId())
