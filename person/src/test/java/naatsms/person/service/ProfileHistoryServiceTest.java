@@ -2,6 +2,7 @@ package naatsms.person.service;
 
 import com.google.gson.JsonObject;
 import com.jayway.jsonpath.JsonPath;
+import naatsms.person.entity.Address;
 import naatsms.person.entity.Individual;
 import naatsms.person.entity.Profile;
 import naatsms.person.entity.ProfileHistory;
@@ -33,12 +34,15 @@ class ProfileHistoryServiceTest {
     @Mock
     private DeltaDetectionStrategy<Individual> individualDeltaDetectionStrategy;
 
+    @Mock
+    private DeltaDetectionStrategy<Address> addressDeltaDetectionStrategy;
+
     private DefaultProfileHistoryService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new DefaultProfileHistoryService(profileHistoryRepository, profileDeltaDetectionStrategy, individualDeltaDetectionStrategy);
+        service = new DefaultProfileHistoryService(profileHistoryRepository, profileDeltaDetectionStrategy, individualDeltaDetectionStrategy, addressDeltaDetectionStrategy);
     }
 
     @Test

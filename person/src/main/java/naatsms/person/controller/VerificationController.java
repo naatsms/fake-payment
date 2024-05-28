@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-@RestController
+//@RestController
 @RequestMapping("/api/verification")
 public class VerificationController {
 
