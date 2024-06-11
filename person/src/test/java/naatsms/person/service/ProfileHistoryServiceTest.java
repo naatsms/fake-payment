@@ -47,8 +47,8 @@ class ProfileHistoryServiceTest {
 
     @Test
     void testCreateHistoryEntry() {
-        Individual oldUser = Individual.builder().profileId(UUID.randomUUID()).profile(new Profile()).build();
-        Individual newUser = Individual.builder().profileId(UUID.randomUUID()).profile(new Profile()).build();
+        Individual oldUser = Individual.builder().profileId(UUID.randomUUID()).profile(Profile.builder().address(new Address()).build()).build();
+        Individual newUser = Individual.builder().profileId(UUID.randomUUID()).profile(Profile.builder().address(new Address()).build()).build();
         JsonObject json1 = new JsonObject();
         json1.addProperty("testChange", "testValue");
         JsonObject json2 = new JsonObject();
@@ -58,6 +58,7 @@ class ProfileHistoryServiceTest {
 
         when(individualDeltaDetectionStrategy.calculateDelta(oldUser, newUser)).thenReturn(json1);
         when(profileDeltaDetectionStrategy.calculateDelta(oldUser.getProfile(), newUser.getProfile())).thenReturn(json2);
+        when(addressDeltaDetectionStrategy.calculateDelta(oldUser.getProfile().getAddress(), newUser.getProfile().getAddress())).thenReturn(new JsonObject());
         when(profileHistoryRepository.save(any())).thenReturn(Mono.just(history));
 
         StepVerifier.create(service.createHistoryEntry(oldUser, newUser))

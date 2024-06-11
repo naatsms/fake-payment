@@ -12,7 +12,6 @@ public interface IndividualMapper {
     IndividualMapper INSTANCE = Mappers.getMapper(IndividualMapper.class);
 
     @Mapping(target = "profileId", ignore = true)
-    @Mapping(target = "version", ignore = true)
     Individual individualFromDto(IndividualDto dto);
 
     IndividualDto dtoFromIndividual(Individual entity);
