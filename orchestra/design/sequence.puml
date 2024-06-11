@@ -1,0 +1,52 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+header Success flow
+footer Page %page% of %lastpage%
+
+Actor client
+participant Orchestrator as o
+participant PersonService as p
+participant KeyCloak as k
+
+client -> o: registration
+== start SAGA ==
+activate o
+group I step: success
+o -> p: create profile
+activate p
+return 201 created
+end
+group II step: success
+o -> k: create client
+activate k
+return 201 created
+end
+== end SAGA ==
+o -> k: autorize
+activate k
+return token
+return token
+
+newpage 2
+client -> o: registration
+== start SAGA ==
+activate o
+group I step: success
+o -> p: create profile
+activate p
+return 201 created
+end
+group II step: failure
+o -> k: create client
+activate k
+return 503 unavalilable
+end
+== end SAGA ==
+group compensation
+o -> p: delete profile
+activate p
+return 200 success
+end
+return 500 error, try again later
+@enduml

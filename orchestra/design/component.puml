@@ -1,0 +1,26 @@
+@startuml
+'https://plantuml.com/component-diagram
+
+
+package "Orchestra" {
+  [Controller]
+  [Controller] - [Orchestrator]
+  [Orchestrator] -- [PersonService]
+  [Orchestrator] -- [KeyCloakService]
+}
+()HTTP -- [Controller]
+
+cloud {
+  [Person]
+}
+   ()iPerson -- [Person]
+
+cloud {
+  [KeyCloak]
+}
+ ()iKeyCloak -- [KeyCloak]
+
+[PersonService] -- iPerson
+[KeyCloakService] -- iKeyCloak
+
+@enduml
