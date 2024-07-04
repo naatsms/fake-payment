@@ -20,16 +20,9 @@ public class DefaultAddressService implements AddressService {
     }
 
     public Mono<Address> createAddress(AddressDto address) {
-        return Mono.just(address)
-                .map(this::validateAddress)
+        return Mono.just(address != null ? address : new AddressDto(null, null, null, null, null, null, null, null, null))
                 .map(this::addressFromDto)
                 .flatMap(addressRepository::save);
-    }
-
-
-    private AddressDto validateAddress(AddressDto addressDto) {
-        //TODO validate address
-        return addressDto;
     }
 
     private Address addressFromDto(AddressDto addr) {
