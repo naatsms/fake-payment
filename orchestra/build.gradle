@@ -20,11 +20,22 @@ configurations {
 
 repositories {
 	mavenCentral()
+	mavenLocal()
 }
 
 dependencies {
+	implementation libs.keycloak.admin
+	implementation libs.keycloak.auth
+	implementation libs.keycloak.policy
+	implementation libs.keycloak.core
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.keycloak:keycloak-admin-client'
+	implementation 'org.keycloak:keycloak-authz-client'
+	implementation 'org.keycloak:keycloak-policy-enforcer'
+	implementation 'org.keycloak:keycloak-core'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -33,6 +44,8 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'com.naatsms:payment-dto:1.0-SNAPSHOT'
+
 }
 
 tasks.named('test') {

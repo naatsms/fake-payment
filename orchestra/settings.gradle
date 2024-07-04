@@ -1,1 +1,13 @@
 rootProject.name = 'orchestra'
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            version('keycloak', '24.0.4')
+            library('keycloak-admin', 'org.keycloak', 'keycloak-admin-client').versionRef('keycloak')
+            library('keycloak-auth', 'org.keycloak', 'keycloak-authz-client').versionRef('keycloak')
+            library('keycloak-policy', 'org.keycloak', 'keycloak-policy-enforcer').versionRef('keycloak')
+            library('keycloak-core', 'org.keycloak', 'keycloak-core').versionRef('keycloak')
+        }
+    }
+}
