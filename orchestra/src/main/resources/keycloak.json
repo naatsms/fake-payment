@@ -1,0 +1,8 @@
+{
+    "realm": "payment",
+    "auth-server-url" : "http://localhost:8080",
+    "resource" : "orchestra",
+    "credentials": {
+        "secret": "ARH6tQFFpSAVn4gAurla0ZfklXRJLmLI"
+    }
+}
