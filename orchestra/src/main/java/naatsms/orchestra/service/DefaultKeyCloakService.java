@@ -8,6 +8,8 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -16,15 +18,18 @@ import java.util.Map;
 
 import static naatsms.orchestra.constants.Constants.CLAIM_UUID;
 import static naatsms.orchestra.constants.Constants.REALM_NAME;
-import static naatsms.orchestra.service.DefaultPersonService.LOG;
 
 @Service
 public class DefaultKeyCloakService implements KeyCloakService {
 
-    private final Keycloak keycloakClient;
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultKeyCloakService.class);
 
-    public DefaultKeyCloakService(Keycloak keycloakClient) {
+    private final Keycloak keycloakClient;
+    private final AuthzClient authClient;
+
+    public DefaultKeyCloakService(Keycloak keycloakClient, AuthzClient authClient) {
         this.keycloakClient = keycloakClient;
+        this.authClient = authClient;
     }
 
     @Override
@@ -37,8 +42,9 @@ public class DefaultKeyCloakService implements KeyCloakService {
                     return Mono.just(userDto);
                 }
                 else {
-                    LOG.error("[KeyCloak] CreateUser request failed");
-                    return Mono.error(new SagaErrorException(userDto, response.readEntity(String.class)));
+                    var body = response.readEntity(Map.class);
+                    LOG.error("[KeyCloak] CreateUser request failed: {}", body);
+                    return Mono.error(new SagaErrorException(userDto, body));
                 }
             }
         } catch (Exception e) {
@@ -67,13 +73,14 @@ public class DefaultKeyCloakService implements KeyCloakService {
 
     @Override
     public Mono<AuthorizationResponse> authenticateClient(IndividualDto individualDto) {
+        LOG.debug("Authentication request, body: {}", individualDto);
         try {
-            LOG.info("Body: {}", individualDto);
-            return Mono.just(AuthzClient.create()
-                    .authorization(individualDto.email(), individualDto.profile().secretKey())
+            return Mono.just(
+                    authClient.authorization(individualDto.email(), individualDto.profile().secretKey())
                     .authorize());
         } catch (Exception e) {
-            LOG.error("shit happened: ", e); //TODO
+            //TODO https://github.com/naatsms/fake-payment/issues/2
+            LOG.error("shit happened: ", e);
             return Mono.error(e);
         }
     }

@@ -6,14 +6,11 @@ import naatsms.orchestra.constants.dto.AuthenticationRequest;
 import naatsms.orchestra.constants.dto.AuthenticationResponse;
 import naatsms.orchestra.constants.dto.RegistrationRequest;
 import naatsms.orchestra.exception.PasswordMismatchException;
-import naatsms.orchestra.exception.SagaErrorException;
-import naatsms.orchestra.exception.SagaRollbackErrorException;
-import naatsms.orchestra.service.DefaultPersonService;
 import naatsms.orchestra.service.KeyCloakService;
+import naatsms.orchestra.service.PersonService;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.springframework.web.ErrorResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ServerErrorException;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -23,9 +20,10 @@ public class RegistrationController {
     @Resource
     private KeyCloakService keyCloakService;
     @Resource
-    private DefaultPersonService personService;
+    private PersonService personService;
 
     @PostMapping(value = "/registration")
+    @ResponseStatus(HttpStatus.CREATED)
     public Mono<AuthenticationResponse> registerUser(@RequestBody RegistrationRequest request) {
         return validate(request)
                 .map(this::buildDto)
@@ -55,17 +53,6 @@ public class RegistrationController {
                 tokenResponse.getExpiresIn(),
                 tokenResponse.getRefreshToken(),
                 tokenResponse.getTokenType());
-    }
-
-    @ExceptionHandler(SagaErrorException.class)
-    public Mono<ErrorResponse> rollback(SagaErrorException e) {
-        return personService.deleteUser(e.getUserDto())
-                .then(Mono.error(new ServerErrorException("Error during user registration: ", e.getCause())));
-    }
-
-    @ExceptionHandler(SagaRollbackErrorException.class)
-    public Mono<ErrorResponse> rollback(SagaRollbackErrorException e) {
-        return Mono.error(new ServerErrorException("Unexpected exception, contact tech support: ", e.getCause()));
     }
 
     private IndividualDto buildDto(RegistrationRequest request) {
