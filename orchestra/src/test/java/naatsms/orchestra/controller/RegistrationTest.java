@@ -9,6 +9,7 @@ import naatsms.orchestra.constants.dto.RegistrationRequest;
 import naatsms.orchestra.helper.PersonHelper;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -159,6 +160,24 @@ class RegistrationTest {
                 .consumeWith(this::print)
                 .jsonPath("$.detail").value(val -> assertTrue(val.contains("failed to respond")), String.class)
                 .jsonPath("$.title").isEqualTo("Internal Server Error");
+    }
+
+    @Test
+    void testRegistrationFailed_RollbackFailed() {
+        var uuid = UUID.randomUUID();
+        personServer.enqueue(new MockResponse()
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .setResponseCode(201)
+                .setBody(PersonHelper.getMockResponseBody(uuid, "testUserName", "testPassword")));
+
+        personServer.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+
+        webTestClient.mutate().responseTimeout(Duration.ofSeconds(15)).build().post().uri("/v1/auth/registration").bodyValue(new RegistrationRequest("testUserName@test.com", "testPassword", "testPassword"))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody()
+                .consumeWith(this::print)
+                .jsonPath("$.title").isEqualTo("Unexpected error, contact tech support team");
     }
 
     private void print(EntityExchangeResult<byte[]> result) {

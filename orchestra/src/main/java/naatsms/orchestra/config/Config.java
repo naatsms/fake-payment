@@ -9,8 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Configuration
@@ -42,9 +45,13 @@ public class Config {
     }
 
     @Bean
-    public WebClient webClient(@Value("${application.person.baseUrl}") String personBaseUrl) {
+    public WebClient webClient(@Value("${application.person.baseUrl}") String personBaseUrl,
+                               @Value("${application.person.responseTimeout.seconds}") Integer timeout) {
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofSeconds(timeout));
         return WebClient.builder()
                 .baseUrl(personBaseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
